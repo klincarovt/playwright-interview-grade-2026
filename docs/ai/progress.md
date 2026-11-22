@@ -3,6 +3,10 @@
 JoJo's notes (commands, takeaways) live in `README.md` → "My notes". Deep dives live in `docs/me/`.
 
 ## Resume point
+**S4 part 1 ✅ (2026-11-22):** `loginPage` fixture, `src/fixtures/index.ts` (facade, re-exports; S5 `mergeTests` lines commented), `tests/example.spec.ts` deleted, `tests/ui/login.spec.ts` negative login green, made to fail (JoJo broke the locator text). Commit pending. **Next: S5 (API) first, then S4 happy path = create the account via API → log in via UI → `header.loggedInAs` (hybrid, also proves the logged-in locators).** Notes doc: `docs/me/Fixtures.md`.
+
+**S3 ✅ (2026-11-22). Ad-blocking fixture in `src/fixtures/ui.fixtures.ts` (overrides `context`, `AD_HOSTS` regex, `async (route) => { await route.abort(); }`; comments added by Claude on request). Commit "Add ad-blocking UI fixture" pending (JoJo). Next: S4 = `loginPage` fixture (`base.extend<{ loginPage: LoginPage }>`, teach generics) + `src/fixtures/index.ts` + first spec `tests/ui/login.spec.ts`: negative login first (no account needed), then happy path (needs an account: UI signup or wait for S5 API).**
+
 **S3 in progress (2026-11-22). Done: `src/ui/pages/LoginPage.ts` + `src/ui/components/HeaderComponent.ts` (ESLint MCP clean; JoJo to run `npm run check` + commit "Add LoginPage and HeaderComponent"). Next: ad-blocking fixture (first fixture: teach `test.extend`, `context.route`, `route.abort()`, `use()`), then S4.**
 - LoginPage: `data-qa` inputs (two "Email Address" fields → testid), `loginErrorText` via `getByText`, `goto()` from `routes`, `login()`, `signUp()`, `header: HeaderComponent` (composition). Locators public `readonly` (tests assert on them).
 - HeaderComponent: `root = page.getByRole('banner')`, all links `this.root.getByRole('link', …)`, `loggedInAs = root.getByText('Logged in as')`, methods `toHome/toProducts/toCart/toSignUpOrLogin/logout/deleteAccount`. JoJo kept extra unused navs (Test Cases, API Testing, Contact us), no methods for them.
@@ -89,6 +93,8 @@ Repo is **private** (JoJo, 2026-11-22) → `docs/ai/progress.md` can stay tracke
 | S2 commit 2 | 2026-11-22 | `da14e1d` "Add config loader with zod validation" (Claude rewrote `environments.ts` into 3 parts on request; JoJo to review later) |
 | **S2 ✅** | 2026-11-22 | `cbf19e3` "Wire config into Playwright projects": `api` + `chromium` with `baseURL` from `env`, `testDir`/`testIgnore`, `data-qa`, CI reporters, `metadata: { env: ENV }`. Pushed |
 | S3 part 1 | 2026-11-22 | `LoginPage` + `HeaderComponent` written by JoJo (commit pending, JoJo runs it) |
+| S3 ✅ | 2026-11-22 | Ad-blocking fixture (`context` override). Committed with S4 part 1 |
+| S4 part 1 | 2026-11-22 | `loginPage` fixture, `index.ts`, first spec (negative login) green + failed on purpose. JoJo commits "Add page fixtures and first login test" |
 | S1 Tooling | 2026-11-22 | All MCP servers connected + `typescript-lsp` plugin verified. Site check via MCP: `/products` server-rendered, ad domains noted. Deep dives reorganised into 3 files: `Framework Initiation.md` (project), `Tooling.md` (machine), `Site Notes.md` (site) |
 
 ## Concept tracker
@@ -117,7 +123,8 @@ JoJo is learning (Java background). Teach ⬜ before the step that needs it; re-
 | POM, components, composition, `root` scoping | 🟡 | Built both in S3; needed several review rounds (scoping, hardcoding) |
 | Classes in TS (`readonly`, constructor, `this`), `async`/`Promise<void>` | 🟡 | Asked "why are we promising" → explained as `CompletableFuture` |
 | Locator order + `getByText` partial match / strict mode | 🟡 | `getByText('Cart')` mistake |
-| Fixtures | ⬜ | Next (ad-blocking fixture, then S4) |
+| Fixtures (`test.extend`, `use()`, override `context`, generics, `index.ts` facade) | 🟡 | Built ad blocking + `loginPage`; pasted the S5 `mergeTests` preview into `index.ts` by mistake (Claude's preview was unclear) |
+| Web-first assertions, make-it-fail | ✅ | `toBeVisible()`; broke the locator text to prove the fail |
 
 ## Weak spots
 - `await` on own async methods (missed 4× in prep repo) → ESLint `no-floating-promises` catches it

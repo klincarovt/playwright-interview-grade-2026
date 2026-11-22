@@ -27,6 +27,7 @@ First use only.
 | `npm install -g <pkg>` | Installs globally (this machine), not into the project |
 | `/plugin install …` → `/reload-plugins` | Installs a Claude Code plugin and loads it |
 | `gh auth login --scopes workflow` → `gh auth setup-git` | GitHub login for git, works in any terminal |
+| `npx playwright test --project=chromium` | Runs only the browser project (its `baseURL`, ignores `tests/api/`) |
 | `npx tsx -e "import * as paths from './src/config/paths'; console.log({ ...paths })"` | Runs a TS one-liner without installing anything. Quick check of what a file exports. `{ ...x }` so values print instead of `[Getter]` |
 
 ### Key ideas
@@ -86,11 +87,18 @@ Say these out loud until they're automatic.
 - `getByText`/`getByRole` names match **part** of the text → `'Cart'` also hits "Add to cart". Scope it or use the role.
 - Add a locator only when a test uses it. Check the real page first (Playwright MCP / codegen).
 
+#### S4 (part 1)
+- A fixture = setup + `use()` (the test runs there) + teardown. Tests ask for it by name: `async ({ loginPage })`.
+- Overriding the built-in `context` gives every page ad blocking (`route.abort()` cancels the request).
+- `src/fixtures/index.ts` is the facade: tests import `test` + `expect` only from there, never from `@playwright/test`.
+- Web-first `expect(...).toBeVisible()` retries for 5 s. Every test is made to fail once on purpose.
+
 ### Deep dives
 | File | Covers |
 | --- | --- |
 | [Framework Initiation](docs/me/Framework%20Initiation.md) | **The project:** setup order, `.gitignore`, the config design (env files, routes, naming rules, vs. Java), template config vs. ours, tsconfig + ESLint line by line, npm scripts |
 | [Environment Config](docs/me/Environment%20Config.txt) | **The config system end to end:** which file answers what, the loader flow, secrets, adding an environment, vs. Java |
+| [Fixtures](docs/me/Fixtures.md) | **Fixtures:** what they are, our files, `index.ts` as the facade, ad blocking, `mergeTests` |
 | [Tooling](docs/me/Tooling.md) | **The machine:** inventory (everything installed + exact commands), MCP servers + plugin, git login + tokens, what Claude can access, every problem we hit |
 | [TypeScript Basics](docs/me/TypeScript%20Basics.md) | **The language:** every TS/Node concept we use, mapped to Java |
 | [Site Notes](docs/me/Site%20Notes.md) | **The site:** what we found on automationexercise (server-rendered, ad domains) |

@@ -32,6 +32,10 @@ Every language or Node concept we use in this project, mapped to Java. Added as 
 | `async m(): Promise<void>` | Returns a `CompletableFuture<Void>` right away; `await` = `join()`. Every `async` method returns a Promise | page objects |
 | `import type { Page } from …` | Imports only the type; erased at runtime | components |
 | `new HeaderComponent(page)` as a field | Composition: the page **has** a header (`private final Header header = new Header(driver)`) | `LoginPage.ts` |
+| `export { test } from './ui.fixtures'` | Re-export: passes it straight through (a facade) | `src/fixtures/index.ts` |
+| `base.extend<{ loginPage: LoginPage }>(…)` | Generics, like `Map<String, LoginPage>`: tells TS which fixtures exist | `ui.fixtures.ts` |
+| `crypto.randomUUID()` | `UUID.randomUUID().toString()` | `login.spec.ts` |
+| `/a\|b/` (regex literal) | `Pattern.compile("a\|b")` | `AD_HOSTS` |
 | `await page.goto(…)` | `future.join()`: **wait** for the result. Without `await` the call runs in the background and the test moves on → the missing-`await` bug | `example.spec.ts`, the lint proof |
 
 File paths (`path.resolve`, `path.join`, `'..'`): see [Framework Initiation §8](Framework%20Initiation.md#8-file-paths-srcconfigpathsts).
