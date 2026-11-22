@@ -1,6 +1,6 @@
 # Framework Initiation (S1–S2)
 
-How the project gets set up, and why each piece is there.
+The project's own setup: files, config, linting. Machine and AI tools are in [Tooling](Tooling.md).
 
 ## 1. Order of the first steps
 
@@ -10,25 +10,22 @@ git init  →  npm init playwright@latest  →  .gitignore  →  first commit
                           must exist BEFORE the first commit
 ```
 
-| Step | Why this order |
-| --- | --- |
-| `git init` first | Everything after it can be tracked |
-| `.gitignore` before the first commit | A committed file stays in history even after you delete it. A leaked secret has to be **rotated**, not just removed |
-| `.gitignore` doesn't untrack | Ignoring a file git already tracks does nothing. You'd need `git rm --cached <file>` |
+- A committed file stays in history even after you delete it. A leaked secret has to be **rotated**, not just removed.
+- Ignoring a file git already tracks does nothing. You'd need `git rm --cached <file>`.
 
 ## 2. What `npm init playwright@latest` creates
 
 | File | What it is | What we do with it |
 | --- | --- | --- |
-| `package.json` | Project name, scripts, dependencies | Add the npm scripts (`test`, `lint`, …) |
-| `package-lock.json` | Exact installed versions | **Commit it**. `npm ci` in CI installs from it → same versions everywhere |
+| `package.json` | Name, scripts, dependencies | Add our npm scripts (§7) |
+| `package-lock.json` | Exact installed versions | **Commit it**. `npm ci` installs from it → same versions everywhere |
 | `node_modules/` | Installed packages | Gitignored, rebuilt by `npm ci` |
-| `playwright.config.ts` | Test runner config | Rewritten in S2 (env config, reporters, workers) |
-| `tests/example.spec.ts` | Demo test against playwright.dev | Run it once to prove the install works, delete before S4 |
+| `playwright.config.ts` | Test runner config | Rewritten in S2 (§5) |
+| `tests/example.spec.ts` | Demo test against playwright.dev | Proved the install works. Delete before S4 |
 | `.github/workflows/playwright.yml` | Template CI file | Replaced in S7 |
-| `.gitignore` | Playwright's output folders | We add our own entries (see section 3) |
+| `.gitignore` | Playwright's output folders | We add our own entries (§3) |
 
-## 3. `.gitignore` rules
+## 3. `.gitignore`
 
 | Rule | Example | Watch out |
 | --- | --- | --- |
@@ -36,84 +33,43 @@ git init  →  npm init playwright@latest  →  .gitignore  →  first commit
 | Root only | `/test-results/` | A leading `/` = only at the repo root |
 | Wildcard | `.env*` | Matches `.env`, `.env.local`, `.env.example` … |
 | Exception | `!.env.example` | Must come **after** the rule it undoes. Later rules win |
-| Exact name | `CLAUDE.local.md` | **Case-sensitive on Linux/CI.** On a Windows drive git ignores case (`core.ignorecase=true`), so a wrong case only looks like it works |
+| Exact name | `CLAUDE.local.md` | **Case-sensitive on Linux/CI.** On the Windows drive git ignores case (`core.ignorecase=true`), so a wrong case only *looks* like it works |
 
-## 4. Template config defaults vs. what we'll change (S2)
+**Ignore before it exists.** A rule protects a file the moment it appears. Without it, the gap is: create `.env` → `git add .` out of habit → commit → secret in history. That's why `/playwright/.auth/`, `.claude/settings.local.json` and soon `.env*` are in there before the files exist.
 
-| Setting | Template | Ours | Why |
-| --- | --- | --- | --- |
-| `forbidOnly` | `!!process.env.CI` | same | A leftover `test.only` fails CI |
-| `retries` | CI 2, local 0 | same | Retries **flag** flaky tests, they don't fix them |
-| `workers` | CI **1** | CI **2** | With 1 worker, parallel bugs never show up in CI |
-| `reporter` | `html` | `list` + `html` (+ `junit` on CI) | Readable console output + a CI-readable file |
-| `baseURL` | commented out | from `src/config/environments.ts` | Config, not code |
-| `projects` | chromium, firefox, webkit | `api`, `chromium` (more later) | PR runs stay fast |
-| dotenv | commented out in the config | loaded only in `environments.ts` | One source of truth |
-
-## 5. Where config goes: typed config vs. env vars
+## 4. Typed config vs. env vars
 
 | | Typed config (`src/config/environments.ts`) | Env vars (`.env` locally, CI secrets) |
 | --- | --- | --- |
-| What | URLs, `testIdAttribute`, timeouts: **non-secret** settings | **Secrets** + **selectors** that pick which config to use (`SITE`, later `ENV`) |
+| What | URLs, `testIdAttribute`, timeouts: **non-secret** | **Secrets** + **selectors** (`SITE`, later `ENV`) |
 | Committed? | Yes, typed and reviewed | No. Only `.env.example` (names, no values) |
 | Why | Type-checked, versioned, one place to change | Different per machine/pipeline, must never reach git |
-
-`.env.example` = **the contract**: every variable the code reads, with no values. A new person copies it to `.env` and fills it in. Here it's tiny (`SITE=`), because the tests create their own accounts. On SauceDemo it would also list `SAUCE_USERNAME=` / `SAUCE_PASSWORD=`.
-
-**Why still gitignore `.env` on a public site?** The habit is the point. Also, `playwright/.auth/*.json` holds real session cookies, so it's private even when the site is public.
 
 ```
 SITE (env var) ──picks──▶ environments.ts entry ──▶ baseURL, apiURL, testIdAttribute
 SECRET (env var) ─────────▶ required('X') ──▶ throws early if missing
 ```
 
-## 6. Git login from WSL (GitHub over HTTPS)
+- `.env.example` = **the contract**: every variable the code reads, no values. Here it's just `SITE=` (tests create their own accounts). On SauceDemo: also `SAUCE_USERNAME=` / `SAUCE_PASSWORD=`.
+- Still gitignore `.env` on a public site: the habit is the point, and `playwright/.auth/*.json` holds real session cookies.
 
-GitHub doesn't accept your account password over HTTPS. Git needs a **credential helper** to supply a token.
+## 5. Template config vs. ours (S2)
 
-```
-git push ──asks──▶ credential helper ──▶ token ──▶ GitHub
-                     │
-                     ├─ VS Code socket (only while that VS Code terminal is alive)
-                     └─ gh (GitHub CLI), works in any terminal ✅
-```
+| Setting | Template | Ours | Why |
+| --- | --- | --- | --- |
+| `forbidOnly` | `!!process.env.CI` | same | A leftover `test.only` fails CI |
+| `retries` | CI 2, local 0 | same | Retries **flag** flaky tests, they don't fix them |
+| `workers` | CI **1** | CI **2** | With 1 worker, parallel bugs never show up in CI |
+| `reporter` | `html` | `list` + `html` (+ `junit` on CI) | Readable console + a CI-readable file |
+| `baseURL` | commented out | from `environments.ts` | Config, not code |
+| `projects` | chromium, firefox, webkit | `api`, `chromium` (more later) | PR runs stay fast |
+| dotenv | commented out | loaded only in `environments.ts` | One source of truth |
 
-| Error | Meaning | Fix |
-| --- | --- | --- |
-| `ECONNREFUSED …/vscode-git-….sock` | The terminal points git at a dead VS Code socket | Open a new terminal, or switch to `gh` |
-| `Repository not found` on a repo you own | No valid login + **private** repo. GitHub says 404 rather than 403, so private repos can't be discovered | Fix the login |
-
-Lasting setup: `gh auth login` → `gh auth setup-git`.
-
-## 7. tsconfig `include` + ESLint type info
-
-```
-                  reads include          strips types, runs JS
-tsconfig.json ─────────────▶ tsc         Playwright ──▶ never type-checks
-      │
-      └──────────▶ ESLint projectService ──▶ type-aware rules (no-floating-promises)
-```
-
-| File outside `include` | Result |
-| --- | --- |
-| `tsc --noEmit` | Skipped **silently** (unless an included file imports it) → type errors never reported |
-| ESLint `projectService` | Fails **loudly**: `… was not found by the project service` |
-| `npx playwright test` | Runs fine: it doesn't type-check at all → that's why CI runs `npm run typecheck` |
-
-A folder in `include` that doesn't exist yet (like `src` before S2) is fine. `tsc` only errors ("No inputs were found") when **no** entry matches any file.
-
-| Rule kind | Needs | Example |
-| --- | --- | --- |
-| Syntax rule | Only the text | `no-focused-test` sees `test.only(` |
-| Type-aware rule | Type info from tsconfig | `no-floating-promises` must know `page.goto()` returns a Promise. `page.locator()` doesn't, and the text alone can't tell them apart |
-
-**Interview line:** *"Playwright transpiles but never type-checks, so `tsc --noEmit` runs in CI. ESLint's type-aware rules like no-floating-promises need tsconfig to know what returns a Promise."*
-
-## 8. What tsconfig and ESLint do, line by line
+## 6. tsconfig + ESLint
 
 ```
 your .ts files
-   ├─▶ Playwright  → runs the tests (ignores types)
+   ├─▶ Playwright  → runs the tests, strips types, NEVER type-checks
    ├─▶ tsc         → "is the code type-correct?"   ← tsconfig.json
    └─▶ ESLint      → "is the code written safely?" ← eslint.config.mjs (+ tsconfig for types)
 ```
@@ -123,37 +79,59 @@ your .ts files
 | --- | --- | --- |
 | `target: "ES2022"` | JS version to compile to | Modern Node supports it |
 | `module: "commonjs"` | Import system of the output (`require`) | Must match `"type": "commonjs"` in `package.json` |
-| `strict: true` | All strict checks on ("could be `undefined`") | Catches bugs before running. Reviewers check it |
-| `esModuleInterop: true` | `import path from 'path'` works for old packages | Cleaner imports |
+| `strict: true` | All strict checks ("could be `undefined`") | Catches bugs before running. Reviewers check it |
+| `esModuleInterop: true` | `import path from 'path'` works | Cleaner imports |
 | `skipLibCheck: true` | Don't type-check `node_modules` | Faster, not your code |
 | `types: ["node"]` | Load Node types (`process`, `path`, `fs`) | Else `process.env` is a type error |
 | `resolveJsonModule: true` | `import data from './x.json'` | JSON test data |
-| `include` | Which files TS knows about | Must match the real folders (§7) |
+| `include` | Which files TS knows about | Must match the real folders ↓ |
+
+**A file outside `include`:**
+| Tool | Result |
+| --- | --- |
+| `tsc --noEmit` | Skipped **silently** (unless an included file imports it) |
+| ESLint `projectService` | Fails **loudly**: `… was not found by the project service` |
+| `playwright test` | Runs fine, it never type-checks → CI must run `npm run typecheck` |
+
+A folder in `include` that doesn't exist yet (`src` before S2) is fine. `tsc` only errors when **no** entry matches any file.
 
 ### eslint.config.mjs
 | Piece | Plain meaning |
 | --- | --- |
-| `ignores` | Skip generated folders |
+| `ignores` | Skip generated folders (reports, results) |
+| `files: ['**/*.ts']` | Type-aware rules only on TS files. Keeps `eslint.config.mjs` itself out of the project service |
 | `recommendedTypeChecked` | Ready-made TS rules that use type info |
-| `projectService: true` | Read tsconfig to learn types |
-| `tsconfigRootDir` | Where tsconfig lives |
+| `projectService: true` + `tsconfigRootDir` | Read tsconfig to learn the types |
 | `no-floating-promises: 'error'` | Fail on a Promise without `await` |
-| `playwright flat/recommended` on `tests/**` | No `test.only`, no `waitForTimeout`, `await` on `expect` |
-| `allowDefaultProject: ['eslint.config.mjs']` | Lint the config file itself even though it isn't in tsconfig `include` |
+| playwright `flat/recommended` on `tests/**` | No `test.only`, no `waitForTimeout`, `await` on `expect` |
 
-## 9. Proving lint works
+**Why some rules need type info:** "no `test.only`" only needs the text. `no-floating-promises` must *know* that `page.goto()` returns a Promise and `page.locator()` doesn't. The text alone can't tell them apart.
 
+### Proof it works
 Removing `await` before `expect(page).toHaveTitle(...)` gave **two** errors:
 
-| Rule | From | Proves |
-| --- | --- | --- |
-| `@typescript-eslint/no-floating-promises` | typescript-eslint | Type info works: ESLint *knows* this returns a Promise |
-| `playwright/missing-playwright-await` | eslint-plugin-playwright | The Playwright plugin is active on `tests/**` |
+| Rule | Proves |
+| --- | --- |
+| `@typescript-eslint/no-floating-promises` | Type info works. Also catches un-awaited page-object methods |
+| `playwright/missing-playwright-await` | The Playwright plugin is active on `tests/**` |
 
-Two rules for one mistake is fine. The first catches **any** un-awaited Promise (also your own page-object methods), the second gives a Playwright-specific message.
+## 7. npm scripts
+
+| Script | Command | Why this way |
+| --- | --- | --- |
+| `test` | `playwright test` | Everything |
+| `test:smoke` | `playwright test --grep @smoke` | Tag filter: the fast PR set |
+| `test:api` | `playwright test --project=api` | The **project** has its own `baseURL` and no browser. A folder filter (`tests/api`) would run the API specs once **per browser project** |
+| `test:e2e` | `playwright test --project=chromium` | Not `test:ui`: `--ui` is Playwright's UI mode |
+| `report` | `playwright show-report` | Opens the last HTML report |
+| `lint` | `eslint .` | |
+| `typecheck` | `tsc --noEmit` | |
+
+No `npx` inside scripts: npm adds `node_modules/.bin` to the PATH while a script runs.
 
 ## One-liners
+- `.gitignore` first, commit second. Ignore before the file exists.
 - URLs live in typed config. `.env` holds secrets and selectors.
 - `package-lock.json` is committed, `node_modules/` is not.
-- `.gitignore` first, commit second.
 - File names in config files: exact case, always.
+- Playwright runs, `tsc` type-checks, ESLint checks patterns. Three different jobs.

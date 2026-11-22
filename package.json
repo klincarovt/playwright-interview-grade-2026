@@ -1,14 +1,19 @@
 {
   "name": "playwright-interview-grade-2026",
   "version": "1.0.0",
-  "description": "UI + API test framework for [automationexercise.com](https://automationexercise.com). Work in progress: the full README (how to run, structure, design decisions) comes in step S8.",
+  "description": "Playwright + TypeScript UI and API test framework for automationexercise.com",
   "main": "index.js",
   "directories": {
     "doc": "docs"
   },
   "scripts": {
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "playwright test",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:api": "playwright test --project=api",
+    "test:e2e": "playwright test --project=chromium",
+    "report": "playwright show-report"
   },
   "keywords": [],
   "author": "",
