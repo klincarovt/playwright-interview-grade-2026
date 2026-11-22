@@ -67,6 +67,91 @@ SITE (env var) ──picks──▶ environments.ts entry ──▶ baseURL, api
 SECRET (env var) ─────────▶ required('X') ──▶ throws early if missing
 ```
 
+## 6. Git login from WSL (GitHub over HTTPS)
+
+GitHub doesn't accept your account password over HTTPS. Git needs a **credential helper** to supply a token.
+
+```
+git push ──asks──▶ credential helper ──▶ token ──▶ GitHub
+                     │
+                     ├─ VS Code socket (only while that VS Code terminal is alive)
+                     └─ gh (GitHub CLI), works in any terminal ✅
+```
+
+| Error | Meaning | Fix |
+| --- | --- | --- |
+| `ECONNREFUSED …/vscode-git-….sock` | The terminal points git at a dead VS Code socket | Open a new terminal, or switch to `gh` |
+| `Repository not found` on a repo you own | No valid login + **private** repo. GitHub says 404 rather than 403, so private repos can't be discovered | Fix the login |
+
+Lasting setup: `gh auth login` → `gh auth setup-git`.
+
+## 7. tsconfig `include` + ESLint type info
+
+```
+                  reads include          strips types, runs JS
+tsconfig.json ─────────────▶ tsc         Playwright ──▶ never type-checks
+      │
+      └──────────▶ ESLint projectService ──▶ type-aware rules (no-floating-promises)
+```
+
+| File outside `include` | Result |
+| --- | --- |
+| `tsc --noEmit` | Skipped **silently** (unless an included file imports it) → type errors never reported |
+| ESLint `projectService` | Fails **loudly**: `… was not found by the project service` |
+| `npx playwright test` | Runs fine: it doesn't type-check at all → that's why CI runs `npm run typecheck` |
+
+A folder in `include` that doesn't exist yet (like `src` before S2) is fine. `tsc` only errors ("No inputs were found") when **no** entry matches any file.
+
+| Rule kind | Needs | Example |
+| --- | --- | --- |
+| Syntax rule | Only the text | `no-focused-test` sees `test.only(` |
+| Type-aware rule | Type info from tsconfig | `no-floating-promises` must know `page.goto()` returns a Promise. `page.locator()` doesn't, and the text alone can't tell them apart |
+
+**Interview line:** *"Playwright transpiles but never type-checks, so `tsc --noEmit` runs in CI. ESLint's type-aware rules like no-floating-promises need tsconfig to know what returns a Promise."*
+
+## 8. What tsconfig and ESLint do, line by line
+
+```
+your .ts files
+   ├─▶ Playwright  → runs the tests (ignores types)
+   ├─▶ tsc         → "is the code type-correct?"   ← tsconfig.json
+   └─▶ ESLint      → "is the code written safely?" ← eslint.config.mjs (+ tsconfig for types)
+```
+
+### tsconfig.json
+| Option | Plain meaning | Why |
+| --- | --- | --- |
+| `target: "ES2022"` | JS version to compile to | Modern Node supports it |
+| `module: "commonjs"` | Import system of the output (`require`) | Must match `"type": "commonjs"` in `package.json` |
+| `strict: true` | All strict checks on ("could be `undefined`") | Catches bugs before running. Reviewers check it |
+| `esModuleInterop: true` | `import path from 'path'` works for old packages | Cleaner imports |
+| `skipLibCheck: true` | Don't type-check `node_modules` | Faster, not your code |
+| `types: ["node"]` | Load Node types (`process`, `path`, `fs`) | Else `process.env` is a type error |
+| `resolveJsonModule: true` | `import data from './x.json'` | JSON test data |
+| `include` | Which files TS knows about | Must match the real folders (§7) |
+
+### eslint.config.mjs
+| Piece | Plain meaning |
+| --- | --- |
+| `ignores` | Skip generated folders |
+| `recommendedTypeChecked` | Ready-made TS rules that use type info |
+| `projectService: true` | Read tsconfig to learn types |
+| `tsconfigRootDir` | Where tsconfig lives |
+| `no-floating-promises: 'error'` | Fail on a Promise without `await` |
+| `playwright flat/recommended` on `tests/**` | No `test.only`, no `waitForTimeout`, `await` on `expect` |
+| `allowDefaultProject: ['eslint.config.mjs']` | Lint the config file itself even though it isn't in tsconfig `include` |
+
+## 9. Proving lint works
+
+Removing `await` before `expect(page).toHaveTitle(...)` gave **two** errors:
+
+| Rule | From | Proves |
+| --- | --- | --- |
+| `@typescript-eslint/no-floating-promises` | typescript-eslint | Type info works: ESLint *knows* this returns a Promise |
+| `playwright/missing-playwright-await` | eslint-plugin-playwright | The Playwright plugin is active on `tests/**` |
+
+Two rules for one mistake is fine. The first catches **any** un-awaited Promise (also your own page-object methods), the second gives a Playwright-specific message.
+
 ## One-liners
 - URLs live in typed config. `.env` holds secrets and selectors.
 - `package-lock.json` is committed, `node_modules/` is not.

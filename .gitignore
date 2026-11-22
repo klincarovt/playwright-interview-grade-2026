@@ -6,4 +6,8 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
-Claude.local.md
+CLAUDE.local.md
+
+# Claude Code / MCP
+.playwright-mcp/
+.claude/settings.local.json

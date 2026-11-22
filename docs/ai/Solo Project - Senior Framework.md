@@ -133,7 +133,7 @@
 - [ ] **API returns HTTP 200 even on errors**, the real code is in the body (`responseCode`) → assert on the body. Verify this first and note it in the README. **Interview line:** *"I'd raise this as a contract defect. Until it's fixed, the schema validates `responseCode` so it can't be missed."*
 - [ ] **POST endpoints appear to take form fields, not JSON** (`createAccount`, `verifyLogin`, `searchProduct`) → send with the request's `form` option. Verify on the API list page first
 - [ ] The site uses **`data-qa`** attributes **where present** (mainly forms: login, signup, contact) → `testIdAttribute: 'data-qa'` from the env config; elsewhere (product cards, navigation) use `getByRole` / `getByText`
-- [ ] **Pages appear to be rendered on the server**: the UI probably doesn't call `/api/*`, so there may be little or nothing to mock in the browser. Check DevTools → Network → Fetch/XHR before writing mock specs (§14)
+- [ ] **Pages appear to be rendered on the server**: the UI probably doesn't call `/api/*`, so there may be little or nothing to mock in the browser. Check DevTools → Network → Fetch/XHR before writing mock specs (§14). **Verified for `/products` (S1, via Playwright MCP): no `/api/*` calls.** Still to check: add to cart. Ad/consent domains seen: `pagead2.googlesyndication.com`, `fundingchoicesmessages.google.com`, `ep1.adtrafficquality.google`
 
 ---
 
