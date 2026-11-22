@@ -69,6 +69,7 @@ Say these out loud until they're automatic.
 | File | Covers |
 | --- | --- |
 | [Framework Initiation](docs/me/Framework%20Initiation.md) | **The project:** setup order, `.gitignore`, the config design (env files, routes, naming rules, vs. Java), template config vs. ours, tsconfig + ESLint line by line, npm scripts |
+| [Environment Config](docs/me/Environment%20Config.txt) | **The config system end to end:** which file answers what, the loader flow, secrets, adding an environment, vs. Java |
 | [Tooling](docs/me/Tooling.md) | **The machine:** inventory (everything installed + exact commands), MCP servers + plugin, git login + tokens, what Claude can access, every problem we hit |
 | [TypeScript Basics](docs/me/TypeScript%20Basics.md) | **The language:** every TS/Node concept we use, mapped to Java |
 | [Site Notes](docs/me/Site%20Notes.md) | **The site:** what we found on automationexercise (server-rendered, ad domains) |

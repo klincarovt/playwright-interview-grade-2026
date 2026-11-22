@@ -14,6 +14,19 @@ Every language or Node concept we use in this project, mapped to Java. Added as 
 | `process.env.CI` | `System.getenv("CI")`. Unset → `undefined` (Java: `null`) | `playwright.config.ts` |
 | `!!process.env.CI` | `System.getenv("CI") != null`: turns any value into `true` / `false` | `forbidOnly` |
 | `cond ? a : b` | the same ternary | `retries: process.env.CI ? 2 : 0` |
+| `import * as paths from './paths'` | `import static Paths.*`, but grouped under one name: `paths.ROOT_DIR` | `tsx` check |
+| `import { envFile } from './paths'` | `import static Paths.envFile;`: just that one export | `environments.ts` |
+| `{ ...obj }` (spread) | `new HashMap<>(obj)`: a copy. `{ ...obj, y: 3 }` = copy + override | `tsx` check, later builders |
+| `[Getter]` in `console.log` | A value behind a getter method; spread `{ ...x }` reads it | `tsx` check |
+| `{ path: X, quiet: true }` as an argument | An options object made on the spot, like passing a small settings map | `dotenv.config(…)` |
+| `fs.readFileSync(file, 'utf-8')` | `Files.readString(path)`. Without `'utf-8'` you get bytes | `environments.ts` |
+| `fs.readdirSync(dir)` | `Files.list(dir)`: the names in a folder → `['dev.json']` | `environments.ts` |
+| `JSON.parse(text)` | Jackson `readValue`: text → object. **Not checked**, zod does that | `environments.ts` |
+| `const x: unknown = JSON.parse(t)` | `Object x`: must be checked/cast before use. `any` = typing switched off (lint blocks it) | `environments.ts` |
+| `arr.filter(f => …)` / `arr.map(f => …)` | `stream().filter(…)` / `.map(…)`, no `.stream()` / `.collect()` needed | `names` in `environments.ts` |
+| zod: `z.object`, `z.enum`, `.default`, `z.url()`, `z.record`, `.parse()` | Bean Validation + Jackson in one: describe the shape, `.parse()` returns typed data or throws | `environments.ts` |
+| `const { ENV } = obj` (destructuring) | `String ENV = obj.ENV;`: takes a field out into a constant with the same name | `environments.ts` |
+| TS types are **erased** at runtime | Like Java generics (`List<String>` → `List`). That's why runtime data needs zod | `environments.ts` |
 | `await page.goto(…)` | `future.join()`: **wait** for the result. Without `await` the call runs in the background and the test moves on → the missing-`await` bug | `example.spec.ts`, the lint proof |
 
 File paths (`path.resolve`, `path.join`, `'..'`): see [Framework Initiation §8](Framework%20Initiation.md#8-file-paths-srcconfigpathsts).

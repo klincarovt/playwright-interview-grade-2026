@@ -3,7 +3,10 @@
 JoJo's notes (commands, takeaways) live in `README.md` → "My notes". Deep dives live in `docs/me/`.
 
 ## Resume point
-**S2 in progress (2026-11-22). Step 5 of 6: `src/config/environments.ts`. Teaching block 1 = dotenv (then zod, then fs/JSON).**
+**S2 in progress (2026-11-22). Step 5 written (`environments.ts` complete: dotenv → names → zod ENV → read env + routes → zod shapes → export `ENV`, `env`, `routes`). ✅ Failure proved (`"login"` → ZodError with path `automationexercise.web.loginPath`). ✅ `npm run check` green (after `: unknown` on the `JSON.parse` lines, lint `no-unsafe-assignment`). Pending: JoJo restores `"/login"`, commits when ready (said "wait") → step 6 `playwright.config.ts`.**
+- 🔁 **Open review (JoJo, 2026-11-22: "I will need to review this later"):** Claude rewrote `environments.ts` on request ("make it prettier, better explained"): 3 parts (schemas → which ENV → load+check+export), `readJson()` helper returning `unknown`, `export const { ENV } = …` (destructuring, new). JoJo pushed back hard on complexity ("50 lines for one command", "do people use this?", zod unclear) → explained zod basics + why JS objects aren't enough (types erased at runtime). Check question open: `UserSchema.parse({ name: 'Jo', age: '30' })`. **Next session: JoJo reviews the file and explains it back; offer to drop the folder listing (`z.enum(['dev'])`) if JoJo still finds it heavy.** Not yet confirmed: `npm run check` + `tsx` after the rewrite. Not committed.
+- ⚠️ **For S5 (found by Claude, not yet told to JoJo):** `api.baseURL` = `https://automationexercise.com/api` + paths starting with `/` → Playwright resolves with `new URL()`, so `/productsList` drops `/api` → hits `https://automationexercise.com/productsList`. Fix in S5: api `baseURL` = origin only + paths `/api/productsList`, OR baseURL with trailing `/` + paths without leading `/` (breaks `startsWith('/')`). Recommend the first. Teach it as "verify before you trust" when the first API call is made.
+- Step 5 notes: JoJo found it "too complicated" several times → got the step-6 schemas as a full snippet, asked Claude to fix comments + finish. `ENV=pre` with empty `pre.json` tested (found, no code change), then `pre.json` deleted by Claude. Known gap: `{}` passes `z.record` (zero apps). Explanation file: `docs/me/Environment Config.txt`. zod 🟡: used, not yet explained back by JoJo → ask JoJo to explain the loader top to bottom after the commit.
 - ✅ Step 4 (session 2): `src/config/paths.ts` = `ROOT_DIR` (2× `'..'`), `ENVIRONMENTS_DIR`, `envFile(name)`, `ROUTES_FILE`, `AUTH_DIR`; verified with `npx tsx -e` + `{ ...paths }`. On the way: moved the WHOLE `config/` into `src/` (two folders named `config` confused it → moved back), 3× `'..'`, leftover `console.log`. Q8 ⚠️ ("we use methods because we can"; called `path.join` a "TypeScript method" → Node function; answer = OS separators, slash/`..` normalising). `"routes.json"` double quotes may still be there. `npm run check` (JoJo added `check` script) **not run yet** → ask before commit.
 - Design answers: keep two `config` folders (data vs loader), `paths.ts` not in `utils/`, `envFile` takes the name as a parameter (loader validates `ENV`, not paths.ts). JoJo: "act as a senior" → one decision + reason.
 - ✅ Step 1: `.env*` + `!.env.example`, `.env.example` = `ENV=` (first try was `*.env*`).
@@ -69,6 +72,7 @@ Repo is **private** (JoJo, 2026-11-22) → `docs/ai/progress.md` can stay tracke
 | S1 Commit | 2026-11-22 | `ef76397` pushed: tsconfig + ESLint + MCP + docs. Lint proven to fail. Git login via `gh` |
 | **S1 ✅** | 2026-11-22 | `5327984` "Add npm scripts and reorganise notes". Description fixed, Q6 ⚠️. No more commit prefixes (JoJo's preference) |
 | S2 part 1 | 2026-11-22 | `.env` rules + `.env.example`, zod + dotenv, config design (env files + routes, multiple apps, naming), plan rewritten for a large system, learning-first rule, `docs/me/TypeScript Basics.md` |
+| S2 commit 1 | 2026-11-22 | `9d71e8d` "Add environment config, routes and paths module" (+ body). `.env.example` change made after staging was left out → next commit. Taught `-m` body, add → status → commit |
 | S1 Tooling | 2026-11-22 | All MCP servers connected + `typescript-lsp` plugin verified. Site check via MCP: `/products` server-rendered, ad domains noted. Deep dives reorganised into 3 files: `Framework Initiation.md` (project), `Tooling.md` (machine), `Site Notes.md` (site) |
 
 ## Concept tracker
@@ -90,7 +94,7 @@ JoJo is learning (Java background). Teach ⬜ before the step that needs it; re-
 | `import`, `export const`, arrow functions, template literals | 🟡 | Explained for `paths.ts` |
 | `process.env`, `!!`, ternary | 🟡 | In TypeScript Basics, used in `playwright.config.ts` |
 | `await` / Promises | 🟡 | Weak spot; lint catches it |
-| dotenv (what it does, why one place) | ⬜ | Before step 5 |
+| dotenv (what it does, why one place) | ✅ | Wrote `dotenv.config({ path: DOTENV_FILE, quiet: true })`; "dev wins" (no why given). Knows `.env` = selector + secrets |
 | zod (schema, `z.object`, `z.record`, `z.enum`, `.default`, `.parse`, `z.infer`) | ⬜ | **Before step 5** |
 | Node file reading (`fs.readdirSync`, `fs.readFileSync`, `JSON.parse`) | ⬜ | Before step 5 |
 | Playwright config (`projects`, `use`, `baseURL`, `testIdAttribute`) | ⬜ | Before step 6 |

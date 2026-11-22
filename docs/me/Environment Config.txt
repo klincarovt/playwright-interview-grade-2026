@@ -1,0 +1,113 @@
+ENVIRONMENT CONFIG - how it all fits together
+==============================================
+
+THE IDEA IN ONE SENTENCE
+------------------------
+Tests never contain a URL, a path or a secret. They import two checked objects,
+`env` (URLs) and `routes` (paths), built ONCE by src/config/environments.ts.
+
+
+THE FILES (each answers ONE question)
+-------------------------------------
+  .env                           WHICH environment + secrets      local only, gitignored
+                                   ENV=dev
+                                   (later) API_KEY=...
+  .env.example                   which variables exist            committed, names only, no values
+  config/environments/dev.json   WHAT are that environment's URLs committed, one file per environment
+  config/routes.json             WHAT are the paths (/login)      committed, ONE file (same everywhere)
+  src/config/paths.ts            WHERE are these files on disk    code, the only place paths are built
+  src/config/environments.ts     load + check everything, ONCE    code, the only place dotenv is loaded
+
+Rule of thumb:
+  differs per machine/run, or secret  ->  .env  (never committed)
+  shareable, same for everyone        ->  config/*.json  (committed)
+  code                                ->  src/
+
+
+THE FLOW (what environments.ts does, top to bottom)
+---------------------------------------------------
+
+  .env  ─────────────────▶ 1. dotenv copies ENV=dev into process.env
+                              (never overwrites: in CI the job's ENV wins)
+
+  config/environments/ ──▶ 2. list the files, keep *.json, drop ".json"
+                              -> names = ['dev']
+
+                           3. zod: ENV must be one of names, default 'dev'
+                              ENV=dve -> STOP: "expected 'dev'"
+
+  dev.json ──────────────▶ 4. read envFile(ENV) as text -> JSON.parse -> rawEnv
+
+  routes.json ───────────▶ 5. read ROUTES_FILE as text -> JSON.parse -> rawRoutes
+
+                           6. zod: check rawEnv + rawRoutes have the right shape
+                              missing/misspelled key -> STOP with the exact path
+                              -> export env, routes (checked + typed)
+
+
+WHO USES THE RESULT
+-------------------
+  playwright.config.ts   env.automationexercise.web.baseURL   (chromium project)
+                         env.automationexercise.api.baseURL   (api project)
+  page objects           routes.automationexercise.web.loginPath
+  API clients            routes.automationexercise.api.productsListPath
+
+
+NAMING INSIDE THE LOADER
+------------------------
+  routesText   the file as one string                 (readFileSync)
+  rawRoutes    parsed object, NOT checked, type any   (JSON.parse)
+  routes       checked by zod, real type              (what gets exported)
+
+
+WHY EACH PIECE EXISTS
+---------------------
+  dotenv          no typing ENV=dev before every command; somewhere for local secrets
+  DOTENV_FILE     dotenv looks in the folder you ran from -> from a subfolder nothing loads
+  names from folder   adding pre.json = new environment, zero code change
+  zod on ENV      a typo fails in second 1 with a clear message, not "file not found"
+  zod on JSON     JSON.parse returns `any`: baseUrl vs baseURL would compile fine and
+                  give `undefined` in test 47. zod catches it at startup
+  default 'dev'   a forgotten variable must NEVER hit production
+  runs once       Node caches imports: every file gets the same object (like a singleton)
+
+
+SECRETS
+-------
+  local: .env (API_KEY=abc)      CI: GitHub secrets -> env vars
+  both end up in process.env -> checked by the same zod schema in environments.ts
+  never in JSON, never in git. .env.example lists the names only.
+  On this site there are no real secrets: tests create throwaway accounts.
+
+
+HOW TO ADD AN ENVIRONMENT
+-------------------------
+  1. copy config/environments/dev.json to pre.json, change the URLs
+  2. run: ENV=pre npm test
+  No code change.
+
+
+COMPARED WITH JAVA
+------------------
+  config.properties + ConfigReader.read("BASEURL")  ->  JSON per env + zod
+  a wrong key returns null mid-run                  ->  a wrong key stops the run at startup
+  System.getenv("ENV")                              ->  process.env.ENV
+  Files.readString + Jackson readValue              ->  fs.readFileSync + JSON.parse
+  Bean Validation (@NotNull, @URL)                  ->  zod schema
+
+
+IS IT OVERKILL?
+---------------
+  For one site with one environment: a bit. That's deliberate (showcase).
+  A small project could skip dotenv and pass ENV=dev on the command line,
+  and hardcode the list of environments instead of reading the folder.
+  The zod checks are worth it at any size.
+
+
+INTERVIEW LINE
+--------------
+  "Config is one JSON per environment holding every service URL, validated with
+   zod at startup. ENV picks the file and defaults to dev, never prod; the valid
+   names are just the files that exist, so a new environment is a new file.
+   Secrets come from the environment and go through the same schema. Paths live
+   once in routes.json, because they don't change between environments."

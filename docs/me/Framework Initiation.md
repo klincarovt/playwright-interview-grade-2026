@@ -176,6 +176,56 @@ path.resolve(__dirname, '..', '..')     ≡   path.resolve(__dirname, '../..')
 | No `/` inside arguments | `path.join` adds the right separator (`/` Linux, `\` Windows) |
 | The file must sit in `src/config/` | "Two up" only lands on the root from there |
 | A helper builds env file paths: `envFile('dev')` | `environments.ts` asks for a path instead of building one, so paths stay in this one file |
+| `path.join`, never `` `${ROOT_DIR}/config` `` (Q8) | Right separator per OS, cleans `//` and `..` |
+
+Check what a file exports without running tests: `npx tsx -e "import * as paths from './src/config/paths'; console.log({ ...paths })"`.
+
+## 9. dotenv (`src/config/environments.ts`)
+
+```ts
+dotenv.config({ path: DOTENV_FILE, quiet: true });
+```
+
+| Rule | Why |
+| --- | --- |
+| `.env` has 2 uses: the **selector** (`ENV=dev`) + **secrets** (`API_KEY=…`) | Both differ per machine/run and are never committed. Shareable stuff (URLs, paths) is JSON in `config/` |
+| dotenv **never overwrites** a variable that's already set | CI `ENV=dev` beats `.env` `ENV=pre`. In CI there's usually no `.env` at all |
+| Explicit `path` (`DOTENV_FILE` from `paths.ts`) | Default is the folder you ran the command from → from a subfolder nothing loads, no error |
+| `quiet: true` | No log line on every load / every worker |
+| Loaded once, only here | One place decides what's in `process.env` |
+| No `.env` file → still works | `ENV` defaults to `dev` |
+
+Secrets: locally in `.env`, in CI as GitHub secrets → both end up in `process.env` → checked by zod in `environments.ts`. `.env.example` lists the names, no values.
+
+## 10. The loader (`src/config/environments.ts`)
+
+**One job:** turn untrusted outside stuff (`.env`, JSON files) into checked, typed `env` + `routes`. Runs once; every file that imports it gets the same object (Node caches imports, like a singleton).
+
+```
+.env ──────────────▶ 1. dotenv → process.env.ENV
+config/environments/ ─▶ 2. readdirSync + filter + map → ['dev']
+                       3. zod: ENV must be in ['dev'], default 'dev'      ✗ → stop
+dev.json ───────────▶ 4. readFileSync(envFile(ENV)) + JSON.parse → rawEnv
+routes.json ────────▶ 5. readFileSync(ROUTES_FILE) + JSON.parse → rawRoutes
+                       6. zod: check shapes → export env, routes           ✗ → stop
+```
+
+| # | Answers | Code | Without it |
+| --- | --- | --- | --- |
+| 1 | Which environment? | `dotenv.config({ path: DOTENV_FILE, quiet: true })` | Type `ENV=dev` before every command |
+| 2 | Which environments exist? | `readdirSync(dir).filter(.json).map(basename)` | A new env needs a code change |
+| 3 | Is `ENV` valid? | zod `z.enum(names).default('dev')` | `ENV=dve` → file not found, unclear error |
+| 4 | Its URLs? | `JSON.parse(readFileSync(envFile(ENV), 'utf-8'))` | No `baseURL` |
+| 5 | The paths? | `JSON.parse(readFileSync(ROUTES_FILE, 'utf-8'))` | Paths hardcoded in pages/clients |
+| 6 | Is it all valid? | zod schemas + `export` | Typo → `undefined` in test 47 |
+
+**File layout (3 parts):** 1. schemas = what valid config looks like · 2. which `ENV` · 3. load + check + export (`EnvSchema.parse(readJson(envFile(ENV)))`, read inside out: path → read → check).
+
+**`readJson(file)`** returns `unknown`: parsed but **not trusted** until zod checks it. Checked by zod = typed.
+
+**Why `JSON.parse` isn't enough:** it returns `any` → TypeScript can't catch `baseUrl` vs `baseURL`. zod checks the real data and gives back a real type.
+
+Proved while building: `npx tsx src/config/environments.ts` with a temporary `console.log` (text prints with `"quotes"` on keys, a parsed object without).
 
 ## One-liners
 - `.gitignore` first, commit second. Ignore before the file exists.
