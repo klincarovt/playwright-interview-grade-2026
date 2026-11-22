@@ -1,5 +1,7 @@
-export { test } from './ui.fixtures';
-export { expect } from '@playwright/test';
+import { mergeTests } from '@playwright/test';
+import { test as uiTest } from './ui.fixtures';
+import { apiTest } from './api.fixtures';
 
-//export const test = mergeTests(uiTest, apiFixtures);   // browser tests: pages + clients
-//export const apiTest = apiFixtures;                    // API tests: no browser
+export { expect } from '@playwright/test';
+export const test = mergeTests(uiTest, apiTest);    // browser tests: pages + clients
+export { apiTest }; // API tests: no browser

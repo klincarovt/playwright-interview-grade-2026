@@ -12,4 +12,15 @@ What we found on the real site. These go into the final README's "Issues found".
 | Login page has **two** "Email Address" fields (login + signup) | Playwright MCP snapshot (S3) | Use `data-qa` (`login-email`, `signup-email`) |
 | Login error "Your email or password is incorrect!" has **no `data-qa`** | Manual check (S3) | `getByText`. Ask devs for test ids on error states |
 
-Still to verify (plan §5): the API response codes, HTTP 200 on errors, form-encoded POST bodies.
+## API (verified with curl, S5)
+
+| Call | HTTP status | Body `responseCode` | Message |
+| --- | --- | --- | --- |
+| `POST /api/productsList` (wrong method) | **200** | 405 | "This request method is not supported." |
+| `POST /api/searchProduct` (no parameter) | **200** | 400 | "Bad request, search_product parameter is missing in POST request." |
+
+`GET /api/productsList` (Playwright MCP, S5): `{ responseCode: 200, products: [{ id: 1, name: "Blue Top", price: "Rs. 500", brand: "Polo", category: { usertype: { usertype: "Women" }, category: "Tops" } }, …] }`. **`price` is a string with a currency prefix (`"Rs. 500"`), not a number** → schema `z.string()`; parse it if a test needs to compare prices.
+
+→ **HTTP status is always 200, the real code is in the body.** Tests assert `body.responseCode`, never `response.ok()` / status 200 (they can't fail here). README "Issues found": a contract defect.
+
+Still to verify: form-encoded POST bodies.

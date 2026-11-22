@@ -5,8 +5,8 @@
             "productsPath": "/products"
         },
         "api": {
-            "productsListPath": "/productsList",
-            "searchProductPath": "/searchProduct"
+            "productsListPath": "/api/productsList",
+            "searchProductPath": "/api/searchProduct"
         }
     }
 }

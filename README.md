@@ -21,12 +21,13 @@ First use only.
 | `npm i -D <pkg>` | Installs a dev dependency (a tool), saved in `package.json` |
 | `npm run typecheck` / `npm run lint` | Type errors / code patterns (missing `await`, `test.only`) |
 | `npx playwright test` | Runs all tests |
-| `npm run test:api` | API project only. Fails with "project not found" until the `api` project exists |
+| `npm run test:api` | API project only: no browser starts |
 | `npm i -D zod dotenv` | zod = schema validation (config, env vars, API responses) · dotenv = reads `.env` into `process.env` |
 | `claude mcp add <name> -- <cmd>` / `claude mcp remove <name>` | Add / remove an MCP server for Claude. `--` only when `<cmd>` has its own flags |
 | `npm install -g <pkg>` | Installs globally (this machine), not into the project |
 | `/plugin install …` → `/reload-plugins` | Installs a Claude Code plugin and loads it |
 | `gh auth login --scopes workflow` → `gh auth setup-git` | GitHub login for git, works in any terminal |
+| `curl -s -w "\nHTTP status: %{http_code}\n" -X POST <url>` | Sends one HTTP request from the terminal and prints the real status (Postman without the UI) |
 | `npx playwright test --project=chromium` | Runs only the browser project (its `baseURL`, ignores `tests/api/`) |
 | `npx tsx -e "import * as paths from './src/config/paths'; console.log({ ...paths })"` | Runs a TS one-liner without installing anything. Quick check of what a file exports. `{ ...x }` so values print instead of `[Getter]` |
 
@@ -93,11 +94,19 @@ Say these out loud until they're automatic.
 - `src/fixtures/index.ts` is the facade: tests import `test` + `expect` only from there, never from `@playwright/test`.
 - Web-first `expect(...).toBeVisible()` retries for 5 s. Every test is made to fail once on purpose.
 
+#### S5
+- Verify the real API before writing tests (curl): HTTP is always 200, the real code is in the body → assert `body.responseCode`.
+- `baseURL` + a path starting with `/` drops everything after the host → API `baseURL` = host only, paths carry `/api/...`.
+- Client = how to call (no asserts) · fixture = builds it once per worker · test = calls + asserts.
+- Responses are untrusted: `Schema.parse(await response.json())` checks the whole contract and gives a type (`z.infer`).
+- `apiTest` = API fixtures only → no browser starts. `test` = `mergeTests(uiTest, apiTest)` → UI tests can use API clients too.
+
 ### Deep dives
 | File | Covers |
 | --- | --- |
 | [Framework Initiation](docs/me/Framework%20Initiation.md) | **The project:** setup order, `.gitignore`, the config design (env files, routes, naming rules, vs. Java), template config vs. ours, tsconfig + ESLint line by line, npm scripts |
 | [Environment Config](docs/me/Environment%20Config.txt) | **The config system end to end:** which file answers what, the loader flow, secrets, adding an environment, vs. Java |
+| [API Layer](docs/me/API%20Layer.md) | **The API layer:** `baseURL` + path, HTTP 200 on errors, curl, clients, `form` / `data` / `params` |
 | [Fixtures](docs/me/Fixtures.md) | **Fixtures:** what they are, our files, `index.ts` as the facade, ad blocking, `mergeTests` |
 | [Tooling](docs/me/Tooling.md) | **The machine:** inventory (everything installed + exact commands), MCP servers + plugin, git login + tokens, what Claude can access, every problem we hit |
 | [TypeScript Basics](docs/me/TypeScript%20Basics.md) | **The language:** every TS/Node concept we use, mapped to Java |

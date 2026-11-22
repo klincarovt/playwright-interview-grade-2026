@@ -3,6 +3,11 @@
 JoJo's notes (commands, takeaways) live in `README.md` → "My notes". Deep dives live in `docs/me/`.
 
 ## Resume point
+**S5 core ✅ (2026-11-22, commit pending by JoJo).** API `baseURL` = host only, paths `/api/...` (fixed the `/api` loss). Verified with curl: HTTP 200 + body 405 / 400. `src/api/clients/ProductClient.ts` (`getProductsList`, `postProductsList`, `searchProduct(term?)` with `form`), `src/api/models/products.schema.ts` (Product, ProductsListResponse, ErrorResponse, `z.infer`), `src/fixtures/api.fixtures.ts` (`apiContext` via `request.newContext` + `dispose`, `productClient`, worker scope, `Record<never, never>`), `index.ts` = `mergeTests(uiTest, apiTest)` + `apiTest` + `expect`. `tests/api/products.spec.ts`: GET list (schema) + POST 405, both green, 2 workers, no browser. Failed on purpose: 400 vs 405 (wrong expectation). Schema-fail check done (price → number).
+- **Next:** search product spec (positive + 400 negative) is optional; then the S4 happy path needs an account → `UserClient` (`createAccount` / `deleteAccount`, form fields, verify codes first) → hybrid test: API creates user → UI login → `header.loggedInAs`. Then S6/S7/S8 as time allows.
+- JoJo questioned: "do we need a model" (yes: lint blocks `any` + contract check), "models obsolete unless we send data" (no: validate what we receive), built-in `request` vs own context (noted in API Layer.md), worker scope, "is it an active connection".
+- Claude overwrote JoJo's unsaved `productClient` when rewriting the file to add comments → rule: for comment requests, insert lines, don't rewrite the file.
+
 **S4 part 1 ✅ (2026-11-22):** `loginPage` fixture, `src/fixtures/index.ts` (facade, re-exports; S5 `mergeTests` lines commented), `tests/example.spec.ts` deleted, `tests/ui/login.spec.ts` negative login green, made to fail (JoJo broke the locator text). Commit pending. **Next: S5 (API) first, then S4 happy path = create the account via API → log in via UI → `header.loggedInAs` (hybrid, also proves the logged-in locators).** Notes doc: `docs/me/Fixtures.md`.
 
 **S3 ✅ (2026-11-22). Ad-blocking fixture in `src/fixtures/ui.fixtures.ts` (overrides `context`, `AD_HOSTS` regex, `async (route) => { await route.abort(); }`; comments added by Claude on request). Commit "Add ad-blocking UI fixture" pending (JoJo). Next: S4 = `loginPage` fixture (`base.extend<{ loginPage: LoginPage }>`, teach generics) + `src/fixtures/index.ts` + first spec `tests/ui/login.spec.ts`: negative login first (no account needed), then happy path (needs an account: UI signup or wait for S5 API).**
@@ -95,6 +100,7 @@ Repo is **private** (JoJo, 2026-11-22) → `docs/ai/progress.md` can stay tracke
 | S3 part 1 | 2026-11-22 | `LoginPage` + `HeaderComponent` written by JoJo (commit pending, JoJo runs it) |
 | S3 ✅ | 2026-11-22 | Ad-blocking fixture (`context` override). Committed with S4 part 1 |
 | S4 part 1 | 2026-11-22 | `loginPage` fixture, `index.ts`, first spec (negative login) green + failed on purpose. JoJo commits "Add page fixtures and first login test" |
+| S5 core | 2026-11-22 | API client + schema + fixture + 2 API specs green. JoJo commits "Add products API client, schema and tests" |
 | S1 Tooling | 2026-11-22 | All MCP servers connected + `typescript-lsp` plugin verified. Site check via MCP: `/products` server-rendered, ad domains noted. Deep dives reorganised into 3 files: `Framework Initiation.md` (project), `Tooling.md` (machine), `Site Notes.md` (site) |
 
 ## Concept tracker
@@ -124,6 +130,8 @@ JoJo is learning (Java background). Teach ⬜ before the step that needs it; re-
 | Classes in TS (`readonly`, constructor, `this`), `async`/`Promise<void>` | 🟡 | Asked "why are we promising" → explained as `CompletableFuture` |
 | Locator order + `getByText` partial match / strict mode | 🟡 | `getByText('Cart')` mistake |
 | Fixtures (`test.extend`, `use()`, override `context`, generics, `index.ts` facade) | 🟡 | Built ad blocking + `loginPage`; pasted the S5 `mergeTests` preview into `index.ts` by mistake (Claude's preview was unclear) |
+| API client / fixture / worker scope / `mergeTests` | 🟡 | Built it; found the fixture confusing → explained with UI comparison table |
+| zod response schemas, `z.array`, `z.infer`, `Record<never, never>` | 🟡 | Questioned the need, accepted after reasons |
 | Web-first assertions, make-it-fail | ✅ | `toBeVisible()`; broke the locator text to prove the fail |
 
 ## Weak spots

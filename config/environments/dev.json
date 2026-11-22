@@ -4,7 +4,7 @@
             "baseURL": "https://automationexercise.com"
         },
         "api": {
-            "baseURL": "https://automationexercise.com/api"
+            "baseURL": "https://automationexercise.com"
         }
     }
 }
