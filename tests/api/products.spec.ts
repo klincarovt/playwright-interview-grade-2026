@@ -1,6 +1,6 @@
 import { apiTest as test, expect } from "../../src/fixtures";
-import { ProductsListResponseSchema, ErrorResponseSchema } from "../../src/api/models/products.schema";
-
+import { ProductsListResponseSchema } from "../../src/api/models/products.schema";
+import { MessageResponseSchema } from "../../src/api/models/common.schema"
 
 test.describe('Products API', { tag: ['@api', '@products'] }, () => {
     test('GET products list returns products', { tag: '@smoke' }, async ({ productClient }) => {
@@ -13,7 +13,7 @@ test.describe('Products API', { tag: ['@api', '@products'] }, () => {
 
     test('POST products list is not supported', async ({ productClient }) => {
         const response = await productClient.postProductsList();
-        const body = ErrorResponseSchema.parse(await response.json());
+        const body = MessageResponseSchema.parse(await response.json());
 
         expect(body.responseCode).toBe(405);
     });

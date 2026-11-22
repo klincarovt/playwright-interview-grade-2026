@@ -16,10 +16,6 @@ export const ProductsListResponseSchema = z.object({
     products: z.array(ProductSchema)
 });
 
-// All error responses on this site: { responseCode, message }
-export const ErrorResponseSchema = z.object({
-    responseCode: z.number(),
-    message: z.string()
-});
+
 
 export type Product = z.infer<typeof ProductSchema>;

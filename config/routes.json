@@ -6,7 +6,9 @@
         },
         "api": {
             "productsListPath": "/api/productsList",
-            "searchProductPath": "/api/searchProduct"
+            "searchProductPath": "/api/searchProduct",
+            "createAccountPath": "/api/createAccount",
+            "deleteAccountPath": "/api/deleteAccount"
         }
     }
 }
