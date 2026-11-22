@@ -45,6 +45,11 @@ Say these out loud until they're automatic.
 - *"URLs change per environment, paths don't, so they live in separate files: no copies to keep in sync."*
 - *"Playwright transpiles but never type-checks, so `tsc --noEmit` runs in CI. ESLint's type-aware rules like no-floating-promises need tsconfig to know what returns a Promise."*
 - *"Retries flag flaky tests, they don't fix them."*
+- *"External data is `unknown` until zod validates it, so the compiler won't let me use it unchecked."*
+- *"Paths only know locations; the loader decides the environment after validating it."*
+- *"No BasePage: shared parts are components that pages have. Inheritance only at the Rule of Three, because a BasePage tends to become a dumping ground."*
+- *"I build paths with `path.join` from one root, never by string concatenation."*
+- *"For one team I'd use a typed TS object. I built it with JSON + zod to show how it scales across environments and services."*
 
 ### Gotchas
 | Symptom | Fix |
@@ -56,6 +61,8 @@ Say these out loud until they're automatic.
 | New MCP server not visible | Restart Claude Code |
 | Playwright MCP: `'chrome' is not found` | Re-add with `--browser chromium` |
 | `.gitignore` `*.env*` | Too broad: also hides any file with `.env` in its name. Use `.env*` |
+| ESLint `no-unsafe-assignment` on `JSON.parse` | Type it `: unknown`, then let zod check it |
+| `workers: … : ENV` compiles but is wrong | `workers` also accepts text (`'50%'`), so TS doesn't catch it. Use `undefined` |
 | A `.ts` file in `config/` (happened twice) | `config/` is JSON only and not in tsconfig `include`: never type-checked, and ESLint fails on it. Code goes in `src/` |
 
 ### Takeaways
@@ -64,6 +71,20 @@ Say these out loud until they're automatic.
 - Copy, then adapt: old configs carry old paths.
 - Exact names: `Claude.local.md` ≠ `CLAUDE.local.md` on Linux.
 - Restart Claude Code after MCP changes.
+
+#### S2
+- Two kinds of config: `.env` = which environment + secrets (local, never committed). `config/*.json` = URLs and paths (shared, committed).
+- `paths.ts` climbs to the root once, then only goes down. `path.join`, never string-built paths.
+- Outside data is `unknown` until zod checks it. TS types disappear at runtime, so `JSON.parse` alone can't catch `baseUrl` vs `baseURL`.
+- One loader, run once: a bad `ENV` or a broken file stops the run at startup with the exact field.
+- One Playwright project per service, each with its own `baseURL` and test folder.
+
+#### S3
+- A page object = locators (`readonly`) + user intents (`login()`), no assertions. Tests assert on its locators.
+- A component owns one area: `root = page.getByRole('banner')`, then search only inside it. A page **has** a header (composition, no BasePage).
+- Never hardcode: paths from `routes`, URLs from `baseURL`, secrets from env.
+- `getByText`/`getByRole` names match **part** of the text → `'Cart'` also hits "Add to cart". Scope it or use the role.
+- Add a locator only when a test uses it. Check the real page first (Playwright MCP / codegen).
 
 ### Deep dives
 | File | Covers |

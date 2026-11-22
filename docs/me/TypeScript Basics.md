@@ -27,6 +27,11 @@ Every language or Node concept we use in this project, mapped to Java. Added as 
 | zod: `z.object`, `z.enum`, `.default`, `z.url()`, `z.record`, `.parse()` | Bean Validation + Jackson in one: describe the shape, `.parse()` returns typed data or throws | `environments.ts` |
 | `const { ENV } = obj` (destructuring) | `String ENV = obj.ENV;`: takes a field out into a constant with the same name | `environments.ts` |
 | TS types are **erased** at runtime | Like Java generics (`List<String>` → `List`). That's why runtime data needs zod | `environments.ts` |
+| `export class LoginPage { readonly x: Locator; constructor(page: Page) { this.x = … } }` | A Java class: `readonly` = `final`, `this` the same. No getters needed | `LoginPage.ts` |
+| `constructor(private readonly page: Page)` | Declares + assigns the field in one go (`private final Page page; this.page = page;`) | shown in S3 |
+| `async m(): Promise<void>` | Returns a `CompletableFuture<Void>` right away; `await` = `join()`. Every `async` method returns a Promise | page objects |
+| `import type { Page } from …` | Imports only the type; erased at runtime | components |
+| `new HeaderComponent(page)` as a field | Composition: the page **has** a header (`private final Header header = new Header(driver)`) | `LoginPage.ts` |
 | `await page.goto(…)` | `future.join()`: **wait** for the result. Without `await` the call runs in the background and the test moves on → the missing-`await` bug | `example.spec.ts`, the lint proof |
 
 File paths (`path.resolve`, `path.join`, `'..'`): see [Framework Initiation §8](Framework%20Initiation.md#8-file-paths-srcconfigpathsts).

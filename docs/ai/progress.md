@@ -3,8 +3,21 @@
 JoJo's notes (commands, takeaways) live in `README.md` → "My notes". Deep dives live in `docs/me/`.
 
 ## Resume point
+**S3 in progress (2026-11-22). Done: `src/ui/pages/LoginPage.ts` + `src/ui/components/HeaderComponent.ts` (ESLint MCP clean; JoJo to run `npm run check` + commit "Add LoginPage and HeaderComponent"). Next: ad-blocking fixture (first fixture: teach `test.extend`, `context.route`, `route.abort()`, `use()`), then S4.**
+- LoginPage: `data-qa` inputs (two "Email Address" fields → testid), `loginErrorText` via `getByText`, `goto()` from `routes`, `login()`, `signUp()`, `header: HeaderComponent` (composition). Locators public `readonly` (tests assert on them).
+- HeaderComponent: `root = page.getByRole('banner')`, all links `this.root.getByRole('link', …)`, `loggedInAs = root.getByText('Logged in as')`, methods `toHome/toProducts/toCart/toSignUpOrLogin/logout/deleteAccount`. JoJo kept extra unused navs (Test Cases, API Testing, Contact us), no methods for them.
+- Mistakes caught: signup clicked `loginButton`; hardcoded `'/page'` path in a field; `getByText('Cart')` (matches "Add to cart"); unscoped header locators; `this.deleteAccount.click()` (method instead of locator); `LoginPage.logout()` forwarding to header (deleted). Folder `src/pages` → `src/ui/pages` (JoJo asked; kept per plan).
+- Verified via Playwright MCP: header = `banner`, link names have an icon glyph prefix. JoJo made a manual throwaway account (codegen) and confirmed Logout / Delete Account / "Logged in as". Password not stored anywhere (rule: secrets only in env).
+- Decisions: no BasePage (Rule of Three), add locators only when a test uses them, `goto()` naming, page objects created by fixtures not `new` in tests (S4).
+
+**S2 ✅ (2026-11-22), pushed.**
+JoJo is short on time: keep replies tiny, give near-complete snippets, skip non-⭐ items.
+- S2 leftovers: `screenshot: 'only-on-failure'` not added; `.env.example` still shows modified (Claude can't read it, ask JoJo); dotenv comment block kept in `playwright.config.ts` by JoJo's choice (typo "antother"); `npm run test:api` → "No tests found" (expected). Pushed "by mistake" → fine, private repo, solo on main.
+- API baseURL `/api` vs leading-slash paths → fix in S5 (see below).
+
+**Older (S2 history):**
 **S2 in progress (2026-11-22). Step 5 written (`environments.ts` complete: dotenv → names → zod ENV → read env + routes → zod shapes → export `ENV`, `env`, `routes`). ✅ Failure proved (`"login"` → ZodError with path `automationexercise.web.loginPath`). ✅ `npm run check` green (after `: unknown` on the `JSON.parse` lines, lint `no-unsafe-assignment`). Pending: JoJo restores `"/login"`, commits when ready (said "wait") → step 6 `playwright.config.ts`.**
-- 🔁 **Open review (JoJo, 2026-11-22: "I will need to review this later"):** Claude rewrote `environments.ts` on request ("make it prettier, better explained"): 3 parts (schemas → which ENV → load+check+export), `readJson()` helper returning `unknown`, `export const { ENV } = …` (destructuring, new). JoJo pushed back hard on complexity ("50 lines for one command", "do people use this?", zod unclear) → explained zod basics + why JS objects aren't enough (types erased at runtime). Check question open: `UserSchema.parse({ name: 'Jo', age: '30' })`. **Next session: JoJo reviews the file and explains it back; offer to drop the folder listing (`z.enum(['dev'])`) if JoJo still finds it heavy.** Not yet confirmed: `npm run check` + `tsx` after the rewrite. Not committed.
+- 🔁 **Open review (JoJo, 2026-11-22: "I will need to review this later"):** Claude rewrote `environments.ts` on request ("make it prettier, better explained"): 3 parts (schemas → which ENV → load+check+export), `readJson()` helper returning `unknown`, `export const { ENV } = …` (destructuring, new). JoJo pushed back hard on complexity ("50 lines for one command", "do people use this?", zod unclear) → explained zod basics + why JS objects aren't enough (types erased at runtime). Check question open: `UserSchema.parse({ name: 'Jo', age: '30' })`. **JoJo will review it and explain it back to themself, later, on their own time (2026-11-22). Don't ask for it; answer questions if they come up.** Not yet confirmed: `npm run check` + `tsx` after the rewrite. Not committed.
 - ⚠️ **For S5 (found by Claude, not yet told to JoJo):** `api.baseURL` = `https://automationexercise.com/api` + paths starting with `/` → Playwright resolves with `new URL()`, so `/productsList` drops `/api` → hits `https://automationexercise.com/productsList`. Fix in S5: api `baseURL` = origin only + paths `/api/productsList`, OR baseURL with trailing `/` + paths without leading `/` (breaks `startsWith('/')`). Recommend the first. Teach it as "verify before you trust" when the first API call is made.
 - Step 5 notes: JoJo found it "too complicated" several times → got the step-6 schemas as a full snippet, asked Claude to fix comments + finish. `ENV=pre` with empty `pre.json` tested (found, no code change), then `pre.json` deleted by Claude. Known gap: `{}` passes `z.record` (zero apps). Explanation file: `docs/me/Environment Config.txt`. zod 🟡: used, not yet explained back by JoJo → ask JoJo to explain the loader top to bottom after the commit.
 - ✅ Step 4 (session 2): `src/config/paths.ts` = `ROOT_DIR` (2× `'..'`), `ENVIRONMENTS_DIR`, `envFile(name)`, `ROUTES_FILE`, `AUTH_DIR`; verified with `npx tsx -e` + `{ ...paths }`. On the way: moved the WHOLE `config/` into `src/` (two folders named `config` confused it → moved back), 3× `'..'`, leftover `console.log`. Q8 ⚠️ ("we use methods because we can"; called `path.join` a "TypeScript method" → Node function; answer = OS separators, slash/`..` normalising). `"routes.json"` double quotes may still be there. `npm run check` (JoJo added `check` script) **not run yet** → ask before commit.
@@ -73,6 +86,9 @@ Repo is **private** (JoJo, 2026-11-22) → `docs/ai/progress.md` can stay tracke
 | **S1 ✅** | 2026-11-22 | `5327984` "Add npm scripts and reorganise notes". Description fixed, Q6 ⚠️. No more commit prefixes (JoJo's preference) |
 | S2 part 1 | 2026-11-22 | `.env` rules + `.env.example`, zod + dotenv, config design (env files + routes, multiple apps, naming), plan rewritten for a large system, learning-first rule, `docs/me/TypeScript Basics.md` |
 | S2 commit 1 | 2026-11-22 | `9d71e8d` "Add environment config, routes and paths module" (+ body). `.env.example` change made after staging was left out → next commit. Taught `-m` body, add → status → commit |
+| S2 commit 2 | 2026-11-22 | `da14e1d` "Add config loader with zod validation" (Claude rewrote `environments.ts` into 3 parts on request; JoJo to review later) |
+| **S2 ✅** | 2026-11-22 | `cbf19e3` "Wire config into Playwright projects": `api` + `chromium` with `baseURL` from `env`, `testDir`/`testIgnore`, `data-qa`, CI reporters, `metadata: { env: ENV }`. Pushed |
+| S3 part 1 | 2026-11-22 | `LoginPage` + `HeaderComponent` written by JoJo (commit pending, JoJo runs it) |
 | S1 Tooling | 2026-11-22 | All MCP servers connected + `typescript-lsp` plugin verified. Site check via MCP: `/products` server-rendered, ad domains noted. Deep dives reorganised into 3 files: `Framework Initiation.md` (project), `Tooling.md` (machine), `Site Notes.md` (site) |
 
 ## Concept tracker
@@ -98,7 +114,10 @@ JoJo is learning (Java background). Teach ⬜ before the step that needs it; re-
 | zod (schema, `z.object`, `z.record`, `z.enum`, `.default`, `.parse`, `z.infer`) | ⬜ | **Before step 5** |
 | Node file reading (`fs.readdirSync`, `fs.readFileSync`, `JSON.parse`) | ⬜ | Before step 5 |
 | Playwright config (`projects`, `use`, `baseURL`, `testIdAttribute`) | ⬜ | Before step 6 |
-| Fixtures, POM, components | ⬜ | S3/S4 |
+| POM, components, composition, `root` scoping | 🟡 | Built both in S3; needed several review rounds (scoping, hardcoding) |
+| Classes in TS (`readonly`, constructor, `this`), `async`/`Promise<void>` | 🟡 | Asked "why are we promising" → explained as `CompletableFuture` |
+| Locator order + `getByText` partial match / strict mode | 🟡 | `getByText('Cart')` mistake |
+| Fixtures | ⬜ | Next (ad-blocking fixture, then S4) |
 
 ## Weak spots
 - `await` on own async methods (missed 4× in prep repo) → ESLint `no-floating-promises` catches it
