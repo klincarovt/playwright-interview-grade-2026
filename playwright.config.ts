@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
+import { ENV, env } from './src/config/environments';
 
-/**
+/** Environment Logic is Moved to antother place. Never Uncomment.
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
@@ -13,6 +14,7 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests',
+  metadata: { env: ENV },
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -20,14 +22,17 @@ export default defineConfig({
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
   /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  workers: process.env.CI ? 2 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  reporter: process.env.CI
+    ? [['list'], ['html', { open: 'never' }], ['junit', { outputFile: 'test-results/junit.xml' }]]
+    : [['list'], ['html']],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
+    // No longer used defined at Configuration.
     /* Base URL to use in actions like `await page.goto('')`. */
     // baseURL: 'http://localhost:3000',
-
+    testIdAttribute: 'data-qa',
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
   },
@@ -35,8 +40,14 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     {
+      name: 'api',
+      testDir: './tests/api',
+      use: { baseURL: env.automationexercise.api.baseURL },
+    },
+    {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      testIgnore: '**/api/**',
+      use: { ...devices['Desktop Chrome'], baseURL: env.automationexercise.web.baseURL },
     },
 
     // Disabling for now.
