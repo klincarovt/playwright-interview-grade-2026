@@ -35,23 +35,51 @@ git init  →  npm init playwright@latest  →  .gitignore  →  first commit
 | Exception | `!.env.example` | Must come **after** the rule it undoes. Later rules win |
 | Exact name | `CLAUDE.local.md` | **Case-sensitive on Linux/CI.** On the Windows drive git ignores case (`core.ignorecase=true`), so a wrong case only *looks* like it works |
 
-**Ignore before it exists.** A rule protects a file the moment it appears. Without it, the gap is: create `.env` → `git add .` out of habit → commit → secret in history. That's why `/playwright/.auth/`, `.claude/settings.local.json` and soon `.env*` are in there before the files exist.
+**Ignore before it exists.** A rule protects a file the moment it appears. Without it, the gap is: create `.env` → `git add .` out of habit → commit → secret in history. That's why `/playwright/.auth/`, `.claude/settings.local.json` and `.env*` are in there before the files exist.
 
-## 4. Typed config vs. env vars
+## 4. Config (built like a large system)
 
-| | Typed config (`src/config/environments.ts`) | Env vars (`.env` locally, CI secrets) |
-| --- | --- | --- |
-| What | URLs, `testIdAttribute`, timeouts: **non-secret** | **Secrets** + **selectors** (`SITE`, later `ENV`) |
-| Committed? | Yes, typed and reviewed | No. Only `.env.example` (names, no values) |
-| Why | Type-checked, versioned, one place to change | Different per machine/pipeline, must never reach git |
+### Three places, split by what changes
+| | `config/environments/<env>.json` | `config/routes.json` | Env vars (`.env`, CI secrets) |
+| --- | --- | --- | --- |
+| Holds | **Base URLs**, per app, per service | **Paths**, per app, per service | **Secrets** + the **`ENV` selector** |
+| Changes per environment? | Yes → one file per env | No → one file for all | Per machine / pipeline |
+| Committed? | Yes | Yes | No. Only `.env.example` (`ENV=`) |
 
 ```
-SITE (env var) ──picks──▶ environments.ts entry ──▶ baseURL, apiURL, testIdAttribute
-SECRET (env var) ─────────▶ required('X') ──▶ throws early if missing
+.env / CI: ENV=dev ──picks──▶ config/environments/dev.json ──┐
+                                                             ├──▶ zod validates ──▶ env, routes
+                              config/routes.json ────────────┘
+page.goto(routes.automationexercise.web.loginPath)  →  baseURL + /login
 ```
 
-- `.env.example` = **the contract**: every variable the code reads, no values. Here it's just `SITE=` (tests create their own accounts). On SauceDemo: also `SAUCE_USERNAME=` / `SAUCE_PASSWORD=`.
-- Still gitignore `.env` on a public site: the habit is the point, and `playwright/.auth/*.json` holds real session cookies.
+### Our files
+```json
+// config/environments/dev.json        // config/routes.json
+{                                       {
+  "automationexercise": {                 "automationexercise": {
+    "web": { "baseURL": "https://…" },      "web": { "loginPath": "/login", "productsPath": "/products" },
+    "api": { "baseURL": "https://…/api" }   "api": { "productsListPath": "/productsList", … }
+  }                                       }
+}                                       }
+```
+
+### Rules
+| Rule | Why |
+| --- | --- |
+| Top-level keys = **apps**, inside = services **`web`** / **`api`** | A large system has many apps per environment. Same shape everywhere → one zod schema validates them all |
+| Full URL keys end in **`URL`**, path keys end in **`Path`** (value starts with `/`) | You see what a value is from its name |
+| No app prefixes (`atmWebURL`) | The app key is already the namespace: `automationexercise.web.baseURL` |
+| No placeholders (`"otherWebsite": {}`) | zod's `z.record` already allows any number of apps. An empty entry just fails validation |
+| One env file only (`dev.json`) | The site has one environment. More files = duplication. A new env = a new file, no code change |
+| Default `ENV` = `dev`, **never `prod`** | A forgotten variable must not touch production data. Prod is tested only in agreed windows, if at all (read-only smoke) |
+| Env files in their own folder | Valid `ENV` names = the files in `config/environments/`, so `routes.json` is never mistaken for an environment |
+
+### Compared with Java
+`config.properties` + `ConfigReader.read("BASEURL")` → returns `null` on a mismatched key at runtime. Here: JSON + zod → a missing or misspelled key fails **at startup**, and the values are typed (autocomplete).
+
+- `.env.example` = **the contract**: every variable the code reads, no values (`ENV=`).
+- Still gitignore `.env`: the habit is the point, and `playwright/.auth/*.json` holds real session cookies.
 
 ## 5. Template config vs. ours (S2)
 
@@ -61,8 +89,9 @@ SECRET (env var) ─────────▶ required('X') ──▶ throws e
 | `retries` | CI 2, local 0 | same | Retries **flag** flaky tests, they don't fix them |
 | `workers` | CI **1** | CI **2** | With 1 worker, parallel bugs never show up in CI |
 | `reporter` | `html` | `list` + `html` (+ `junit` on CI) | Readable console + a CI-readable file |
-| `baseURL` | commented out | from `environments.ts` | Config, not code |
-| `projects` | chromium, firefox, webkit | `api`, `chromium` (more later) | PR runs stay fast |
+| `baseURL` | commented out | per project, from `env.<app>.web/api.baseURL` | Config, not code |
+| `testIdAttribute` | not set | `'data-qa'` | Same in every env → config file, not env JSON |
+| `projects` | chromium, firefox, webkit | one per service: `api` (no browser) + `chromium` (web). With a second app: prefix (`admin-api`), select with `--project='*-api'` | PR runs stay fast |
 | dotenv | commented out | loaded only in `environments.ts` | One source of truth |
 
 ## 6. tsconfig + ESLint
@@ -94,6 +123,8 @@ your .ts files
 | `playwright test` | Runs fine, it never type-checks → CI must run `npm run typecheck` |
 
 A folder in `include` that doesn't exist yet (`src` before S2) is fine. `tsc` only errors when **no** entry matches any file.
+
+**That's why code never goes in `config/`:** it isn't in `include`, so `tsc` skips a `.ts` file there silently, and ESLint (`files: ['**/*.ts']`) fails on it. `config/` = JSON, code = `src/`.
 
 ### eslint.config.mjs
 | Piece | Plain meaning |
@@ -129,9 +160,26 @@ Removing `await` before `expect(page).toHaveTitle(...)` gave **two** errors:
 
 No `npx` inside scripts: npm adds `node_modules/.bin` to the PATH while a script runs.
 
+## 8. File paths (`src/config/paths.ts`)
+
+`path.resolve` / `path.join` take **many arguments**: each one is a step. A name goes **down** into that folder, `'..'` goes **up** one.
+
+```
+path.resolve(__dirname, '..', '..')     ≡   path.resolve(__dirname, '../..')
+     src/config  →  src  →  root
+```
+
+| Rule | Why |
+| --- | --- |
+| Start from `__dirname` (the folder of *this* file) | Same on every machine and in CI. A hardcoded `/mnt/code/...` works only on yours |
+| Climb to the root **once** (`ROOT_DIR`), then only go down | `path.join(ROOT_DIR, 'config', 'routes.json')`. A `'..'` after `'config'` would undo it |
+| No `/` inside arguments | `path.join` adds the right separator (`/` Linux, `\` Windows) |
+| The file must sit in `src/config/` | "Two up" only lands on the root from there |
+| A helper builds env file paths: `envFile('dev')` | `environments.ts` asks for a path instead of building one, so paths stay in this one file |
+
 ## One-liners
 - `.gitignore` first, commit second. Ignore before the file exists.
-- URLs live in typed config. `.env` holds secrets and selectors.
+- URLs per env in `config/environments/`, paths once in `routes.json`. `.env` holds secrets and `ENV`.
 - `package-lock.json` is committed, `node_modules/` is not.
 - File names in config files: exact case, always.
 - Playwright runs, `tsc` type-checks, ESLint checks patterns. Three different jobs.

@@ -3,20 +3,31 @@
 JoJo's notes (commands, takeaways) live in `README.md` → "My notes". Deep dives live in `docs/me/`.
 
 ## Resume point
-**Session ended 2026-11-22. Resume here: finish S1 (3 small things), then S2.**
-1. `package.json` `description`: still Markdown → plain text (optionally delete `main` + `directories`).
-2. Check question **Q6** (why `test:e2e`, not `test:ui`?) — not answered yet.
-3. Commit `chore: add npm scripts for test, smoke, api, e2e and report` + push (`gh` login works now).
-4. Tick S1 ✅ in the plan → start **S2**: `.env*` + `!.env.example` in `.gitignore` FIRST, `.env.example` (`SITE=`), `src/config/environments.ts`, `src/config/paths.ts`, rewrite `playwright.config.ts` (add `api` project → `npm run test:api` starts working). Re-ask Q3, Q4, Q5 after S2.
+**S2 in progress (2026-11-22). Step 5 of 6: `src/config/environments.ts`. Teaching block 1 = dotenv (then zod, then fs/JSON).**
+- ✅ Step 4 (session 2): `src/config/paths.ts` = `ROOT_DIR` (2× `'..'`), `ENVIRONMENTS_DIR`, `envFile(name)`, `ROUTES_FILE`, `AUTH_DIR`; verified with `npx tsx -e` + `{ ...paths }`. On the way: moved the WHOLE `config/` into `src/` (two folders named `config` confused it → moved back), 3× `'..'`, leftover `console.log`. Q8 ⚠️ ("we use methods because we can"; called `path.join` a "TypeScript method" → Node function; answer = OS separators, slash/`..` normalising). `"routes.json"` double quotes may still be there. `npm run check` (JoJo added `check` script) **not run yet** → ask before commit.
+- Design answers: keep two `config` folders (data vs loader), `paths.ts` not in `utils/`, `envFile` takes the name as a parameter (loader validates `ENV`, not paths.ts). JoJo: "act as a senior" → one decision + reason.
+- ✅ Step 1: `.env*` + `!.env.example`, `.env.example` = `ENV=` (first try was `*.env*`).
+- ✅ Step 2: zod ^4.6.7, dotenv ^18.0.10.
+- ✅ Step 3 (kept, JoJo said yes): `config/environments/dev.json` (`{ automationexercise: { web: { baseURL }, api: { baseURL } } }`) + `config/routes.json` (`{ automationexercise: { web: { loginPath, productsPath }, api: { productsListPath, searchProductPath } } }`). History: JoJo made `prod.json` nested by site with an empty `otherWebsite` → renamed to `dev.json`, wanted multiple apps + paths in config + naming (`…URL` / `…Path`). **Claude overstepped**: asked only to fix naming, but also split paths into `routes.json` and moved the file into `environments/` (so `routes.json` isn't discovered as an env). JoJo kept it. → JoJo must read both files and be able to explain them.
+- ✅ Q7: "default dev so we don't impact production data; prod only in certain windows, if at all". Notes: prod runs are usually read-only smoke.
+- ⏳ **Step 4 (JoJo writing it):** first attempt was `config/paths.ts` (wrong folder: not in tsconfig `include`, and ESLint `files: ['**/*.ts']` + `projectService` will fail on it), `ROOT_DIR` = `'../../cofig/'` (typo, and the root isn't inside `config`), `'..'` inside `path.join` after `'config'` (undoes it). Explained: `'..'` per argument = one step up, names = steps down, climb once to `ROOT_DIR`. Target: `ROOT_DIR` (`__dirname, '..', '..'`), `ENVIRONMENTS_DIR`, `ROUTES_FILE`, `envFile(name)` helper, `AUTH_DIR`. Open: **Q8** (why `path.join` over a template string).
+- **Before step 5, teach:** dotenv, zod basics, `fs.readdirSync` / `readFileSync` / `JSON.parse` (all ⬜ in the concept tracker).
+- **Then:** 5 `src/config/environments.ts` (dotenv → list `config/environments/*.json` → zod `process.env` with `z.enum(names)` default `dev` → read env file + routes → zod (`z.record` of apps) → `export env, routes`) → 6 `playwright.config.ts` (`api` + `chromium` projects with `baseURL` from `env`, `testIdAttribute: 'data-qa'`, `workers: 2` CI, reporters, `metadata`). Then commit.
+- Re-ask Q3, Q4, Q5 after S2.
+- **New rule (JoJo):** Claude doesn't edit project files unless asked; keeps its own docs. Never touches permissions. JoJo asked what Claude can access outside the sandbox → explained (reads most files except `.ssh`, `.aws`, `.env*`; writes only the project + temp).
+
+**Design decisions this session (all in plan + CLAUDE.md):**
+- **Senior grade, built for a large system, whole project** (JoJo). Overkill accepted; each extra pattern gets a README/ADR line. 🏢 Scale tier added to the plan (health check, `toMatchSchema`, cleanup registry, GitHub Environments, CODEOWNERS).
+- Config = JSON per environment + zod (JoJo rejected the typed `.ts` map as "not senior"; compared with Java `ConfigReader`/properties).
+- **One environment only** (JoJo: "only duplication"): `config/environments/dev.json`. Valid `ENV` = files in `config/environments/` → new env = new file, zero code change.
+- **Multiple apps per env file** (JoJo: "we will have other apps later"): top-level keys = apps, services `web` / `api` inside. No placeholders (schema `z.record` already allows any number).
+- **Paths are data too** (JoJo), but in ONE `config/routes.json` (same for every env) → replaces the planned `routes.ts` + `endpoints.ts`. Naming: `…URL` for full URLs, `…Path` for paths, no app prefixes (JoJo asked about `atmWEB`-style → no, the app key is the namespace).
+- One Playwright project per service: `api` + `chromium` (prefix with the app name once there's a second app; CLI supports `--project='*-api'`). npm scripts unchanged. `testIdAttribute` in `playwright.config.ts`.
+- Plan fully rewritten for scale (design-goal section, two tag axes, one context per service, new interview questions, ADR list 0001–0007).
+
+**Time left: 1 day, maybe 2.** Cut order if short: S6 → S7 → S8. Never cut S5. Mock task only if day 2 happens.
 
 `npm run test:api` currently fails with "Project(s) "api" not found" → expected until the `api` project exists.
-
-### Earlier S1 log
-1. `.gitignore`: add `.playwright-mcp/` (MCP output, now untracked in root) and `.claude/settings.local.json`. Trailing newline missing at the end.
-2. ✅ Lint proven to fail: removed `await` on `expect(...).toHaveTitle` → both `no-floating-promises` AND `playwright/missing-playwright-await` fired. `.gitignore` MCP entries added (by Claude, on request).
-3. ✅ Bulk commit `ef76397` pushed (message without `chore:` prefix, left as is). Git login fixed for good: `gh auth login --scopes workflow` + `gh auth setup-git`.
-4. ✅ npm scripts done (first try: `npx` prefix + `test:api` as folder filter `tests/api` → fixed to `--project=api`). **Still open:** description, Q6, then commit `chore: add npm scripts…` → tick S1 ✅ → S2. Original task: npm scripts `test`, `test:smoke`, `test:api`, `test:e2e`, `report` (hint level 1 given: `playwright` not `npx playwright`, `--grep`, `--project`, `show-report`) + check question **Q6** (why `test:e2e`, not `test:ui`? → `--ui` is Playwright's UI mode, §12). Also shorten `package.json` description (has Markdown in it). Note: `test:api` needs an `api` project that doesn't exist yet (S2/S5) → expect "Project(s) "api" not found" until then.
-5. Then S2. Before the first `.env` file: add `.env*` + `!.env.example` to `.gitignore`, create `.env.example` (`SITE=`).
 
 Repo is **private** (JoJo, 2026-11-22) → `docs/ai/progress.md` can stay tracked. **If it's ever made public** (to show an interviewer): decide first whether `docs/ai/` and `docs/me/` stay in. `.mcp.json`/`.claude/` in Claude's `git status` were sandbox phantoms; `.playwright-mcp/` is real → gitignore.
 
@@ -33,7 +44,7 @@ Repo is **private** (JoJo, 2026-11-22) → `docs/ai/progress.md` can stay tracke
 - Ad/consent domains to block in the S3 fixture: `pagead2.googlesyndication.com`, `fundingchoicesmessages.google.com` (consent), `ep1.adtrafficquality.google`. Also `automationexercise.com/cdn-cgi/rum` (Cloudflare analytics, harmless).
 - 3 console errors: Google Fonts loaded over `http://` → mixed-content blocked. For README "Issues found".
 
-## Issues faced (S1)
+## Issues faced
 | Issue | Fix |
 | --- | --- |
 | `.gitignore` `Claude.local.md` wrong case, hidden by `core.ignorecase=true` on /mnt | Exact case |
@@ -44,6 +55,10 @@ Repo is **private** (JoJo, 2026-11-22) → `docs/ai/progress.md` can stay tracke
 | MCP not visible after `claude mcp add` | Restart Claude Code |
 | Playwright MCP: `chrome` not found (defaults to Google Chrome); installing Chromium didn't help | Re-add with `--browser chromium` |
 | `/mnt` edits report ENOENT but apply | Verify, don't retry |
+| S2: `.gitignore` `*.env*` (too broad) | `.env*` |
+| S2: `.ts` files in `config/` (twice) | Code in `src/`; `config/` JSON only |
+| S2: `'..'` inside `path.join` after a folder | Climb once to `ROOT_DIR`, then only go down |
+| S2: Claude edited `config/` beyond "fix the naming" | Rule: don't edit project files unless asked; "fix X" = only X |
 
 ## Step log
 | Step | Date | Notes |
@@ -52,14 +67,43 @@ Repo is **private** (JoJo, 2026-11-22) → `docs/ai/progress.md` can stay tracke
 | S1 Part 1 | 2026-11-22 | git init + Playwright init + first push (`Init`). Case mismatch in `.gitignore` |
 | S1 Part 2 | 2026-11-22 | tsconfig + ESLint working. MCP: playwright, eslint, context7 |
 | S1 Commit | 2026-11-22 | `ef76397` pushed: tsconfig + ESLint + MCP + docs. Lint proven to fail. Git login via `gh` |
+| **S1 ✅** | 2026-11-22 | `5327984` "Add npm scripts and reorganise notes". Description fixed, Q6 ⚠️. No more commit prefixes (JoJo's preference) |
+| S2 part 1 | 2026-11-22 | `.env` rules + `.env.example`, zod + dotenv, config design (env files + routes, multiple apps, naming), plan rewritten for a large system, learning-first rule, `docs/me/TypeScript Basics.md` |
 | S1 Tooling | 2026-11-22 | All MCP servers connected + `typescript-lsp` plugin verified. Site check via MCP: `/products` server-rendered, ad domains noted. Deep dives reorganised into 3 files: `Framework Initiation.md` (project), `Tooling.md` (machine), `Site Notes.md` (site) |
+
+## Concept tracker
+JoJo is learning (Java background). Teach ⬜ before the step that needs it; re-check 🟡 later.
+
+| Concept | Status | Notes |
+| --- | --- | --- |
+| git basics (init, add, commit, push, remote) | ✅ | |
+| `.gitignore` rules (`!` order, `/` root, case) | ✅ | |
+| Config vs secrets vs `ENV` selector | ✅ | JoJo drove the JSON-per-env design |
+| Code vs data folders (`src/` vs `config/`) | 🟡 | Put `.ts` files in `config/` twice |
+| JSON format | ✅ | Wrote valid JSON |
+| npm scripts, `npm run x -- --flag` | ✅ | |
+| MCP vs plugin | ✅ | |
+| tsconfig options | 🟡 | Copy-paste knowledge; explained in Framework Initiation §6 |
+| ESLint type-aware rules, tsconfig `include` (Q4/Q5) | 🟡 | Re-ask after S2 |
+| `path.resolve` / `path.join`, `__dirname`, `'..'` as steps | 🟡 | Got it working after 3× `'..'`; Q8 partial (why `join`) |
+| `import * as x`, `import { x }`, spread `{ ...obj }`, getters | 🟡 | Taught via the `tsx` check |
+| `import`, `export const`, arrow functions, template literals | 🟡 | Explained for `paths.ts` |
+| `process.env`, `!!`, ternary | 🟡 | In TypeScript Basics, used in `playwright.config.ts` |
+| `await` / Promises | 🟡 | Weak spot; lint catches it |
+| dotenv (what it does, why one place) | ⬜ | Before step 5 |
+| zod (schema, `z.object`, `z.record`, `z.enum`, `.default`, `.parse`, `z.infer`) | ⬜ | **Before step 5** |
+| Node file reading (`fs.readdirSync`, `fs.readFileSync`, `JSON.parse`) | ⬜ | Before step 5 |
+| Playwright config (`projects`, `use`, `baseURL`, `testIdAttribute`) | ⬜ | Before step 6 |
+| Fixtures, POM, components | ⬜ | S3/S4 |
 
 ## Weak spots
 - `await` on own async methods (missed 4× in prep repo) → ESLint `no-floating-promises` catches it
 - Exact names matter (`BASEURL` vs `BASE_URL`, `Claude.local.md` vs `CLAUDE.local.md`)
 - **Copied, not adapted**: tsconfig `include` from the old project. Check every copied path against this repo
-- tsconfig/ESLint options were copy-paste knowledge only. Explained in Framework Initiation §8. Ask "why is X in your tsconfig?" later
-- Q3: put URLs in `.env` (typed config vs env vars). Re-check in S2
+- tsconfig/ESLint options were copy-paste knowledge only. Explained in Framework Initiation §6. Ask "why is X in your tsconfig?" later
+- Q3: put URLs in `.env` at first → resolved in S2 (designed the config / secrets / `ENV` split)
+- **Wrong folder** (S2, twice): `config/environments.ts`, `config/paths.ts`. `config/` = JSON only, code in `src/`
+- **Path building** (S2): `'..'` placed after a folder name undoes it; didn't know `path.resolve` takes many arguments
 - Q4 + Q5: couldn't answer, answers given (Framework Initiation §6). **Re-ask after S2**
 - Q6: answered "general naming convention, we can do ui" → JoJo pushed back correctly: a script name and a CLI flag are different mechanisms, nothing breaks. The point is only the **convention** (`test:ui` usually = `playwright test --ui`). Graded ⚠️ partial, not ❌. Knows `npm run x -- --flag` now
 - Isolation: a context is per **test**, not per spec file

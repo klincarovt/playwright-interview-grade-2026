@@ -7,6 +7,7 @@
     "doc": "docs"
   },
   "scripts": {
+    "check": "npm run lint && npm run typecheck",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "playwright test",
@@ -22,9 +23,11 @@
   "devDependencies": {
     "@playwright/test": "^1.65.1",
     "@types/node": "^26.6.6",
+    "dotenv": "^18.0.10",
     "eslint": "^10.15.0",
     "eslint-plugin-playwright": "^2.12.2",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.73.0"
+    "typescript-eslint": "^8.73.0",
+    "zod": "^4.6.7"
   }
 }

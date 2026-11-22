@@ -22,21 +22,27 @@ First use only.
 | `npm run typecheck` / `npm run lint` | Type errors / code patterns (missing `await`, `test.only`) |
 | `npx playwright test` | Runs all tests |
 | `npm run test:api` | API project only. Fails with "project not found" until the `api` project exists |
+| `npm i -D zod dotenv` | zod = schema validation (config, env vars, API responses) · dotenv = reads `.env` into `process.env` |
 | `claude mcp add <name> -- <cmd>` / `claude mcp remove <name>` | Add / remove an MCP server for Claude. `--` only when `<cmd>` has its own flags |
 | `npm install -g <pkg>` | Installs globally (this machine), not into the project |
 | `/plugin install …` → `/reload-plugins` | Installs a Claude Code plugin and loads it |
 | `gh auth login --scopes workflow` → `gh auth setup-git` | GitHub login for git, works in any terminal |
+| `npx tsx -e "import * as paths from './src/config/paths'; console.log({ ...paths })"` | Runs a TS one-liner without installing anything. Quick check of what a file exports. `{ ...x }` so values print instead of `[Getter]` |
 
 ### Key ideas
 - **A check that can't fail proves nothing.** Make every test, and the linter, fail once on purpose
-- **Typed config vs. env vars.** URLs live in `src/config/environments.ts` (committed). `.env` holds only secrets and the `SITE` selector
+- **Built like a large system.** Every layer is designed for many apps, services and environments. Overkill for this site on purpose, and each extra pattern gets one line on what a small project could skip
+- **Split config by what changes.** Base URLs per environment in `config/environments/<env>.json`, paths once in `config/routes.json`, secrets + `ENV` in `.env`. zod validates it all at startup
+- **Default `ENV` is `dev`, never `prod`.** A forgotten variable must not touch production data
 - **Ignore before it exists.** A `.gitignore` rule protects a file the moment it appears. A committed secret stays in history
 - **Playwright never type-checks.** `typecheck` and `lint` are separate gates, and CI runs both
 
 ### Interview lines
 Say these out loud until they're automatic.
 
-- *"Non-secret config is typed and versioned. Secrets come from the environment and are validated at startup."*
+- *"I built it the way I'd build it for a large system: one config file per environment with every service URL, validated with zod at startup. The site has one environment, so there's one file; adding pre or prod is adding a JSON file, no code change."*
+- *"Non-secret config is versioned and validated with zod at startup. Secrets come from the environment. A wrong key fails before any test runs, not as a null mid-run like a Java ConfigReader."*
+- *"URLs change per environment, paths don't, so they live in separate files: no copies to keep in sync."*
 - *"Playwright transpiles but never type-checks, so `tsc --noEmit` runs in CI. ESLint's type-aware rules like no-floating-promises need tsconfig to know what returns a Promise."*
 - *"Retries flag flaky tests, they don't fix them."*
 
@@ -49,6 +55,8 @@ Say these out loud until they're automatic.
 | Empty files like `playwright` appear in the root | Pasted npm output into the terminal: a line starting with `>` is a shell redirect and creates an empty file. Delete them, paste only the command |
 | New MCP server not visible | Restart Claude Code |
 | Playwright MCP: `'chrome' is not found` | Re-add with `--browser chromium` |
+| `.gitignore` `*.env*` | Too broad: also hides any file with `.env` in its name. Use `.env*` |
+| A `.ts` file in `config/` (happened twice) | `config/` is JSON only and not in tsconfig `include`: never type-checked, and ESLint fails on it. Code goes in `src/` |
 
 ### Takeaways
 #### S1
@@ -60,6 +68,7 @@ Say these out loud until they're automatic.
 ### Deep dives
 | File | Covers |
 | --- | --- |
-| [Framework Initiation](docs/me/Framework%20Initiation.md) | **The project:** setup order, `.gitignore`, config vs. env vars, template config vs. ours, tsconfig + ESLint line by line, npm scripts |
-| [Tooling](docs/me/Tooling.md) | **The machine:** inventory (everything installed + exact commands), MCP servers + plugin, git login + tokens, every problem we hit |
+| [Framework Initiation](docs/me/Framework%20Initiation.md) | **The project:** setup order, `.gitignore`, the config design (env files, routes, naming rules, vs. Java), template config vs. ours, tsconfig + ESLint line by line, npm scripts |
+| [Tooling](docs/me/Tooling.md) | **The machine:** inventory (everything installed + exact commands), MCP servers + plugin, git login + tokens, what Claude can access, every problem we hit |
+| [TypeScript Basics](docs/me/TypeScript%20Basics.md) | **The language:** every TS/Node concept we use, mapped to Java |
 | [Site Notes](docs/me/Site%20Notes.md) | **The site:** what we found on automationexercise (server-rendered, ad domains) |

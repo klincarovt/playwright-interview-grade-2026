@@ -1,0 +1,12 @@
+{
+    "automationexercise": {
+        "web": {
+            "loginPath": "/login",
+            "productsPath": "/products"
+        },
+        "api": {
+            "productsListPath": "/productsList",
+            "searchProductPath": "/searchProduct"
+        }
+    }
+}

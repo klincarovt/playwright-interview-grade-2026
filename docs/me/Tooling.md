@@ -9,6 +9,7 @@ Rebuild a machine from this list. Keep it current.
 | --- | --- | --- | --- |
 | Package | `@playwright/test`, `@types/node` | Test runner + Node types | `npm init playwright@latest` |
 | Package | `typescript`, `eslint`, `typescript-eslint`, `eslint-plugin-playwright` | Compiler, linter, TS rules, Playwright rules | `npm i -D eslint typescript-eslint eslint-plugin-playwright typescript` |
+| Package | `zod`, `dotenv` | Schema validation (config + `process.env`, later API responses) · reads `.env` into `process.env` | `npm i -D zod dotenv` |
 | Browsers | Chromium, Firefox, WebKit | The test projects | `npm init playwright@latest` (browser step) |
 | Global | `typescript-language-server` + `typescript` | Needed by the `typescript-lsp` plugin | `npm install -g typescript-language-server typescript` |
 | MCP (local) | `playwright` | Claude gets a real browser: pages, clicks, network requests | `claude mcp add playwright -- npx @playwright/mcp@latest --browser chromium` |
@@ -69,7 +70,21 @@ git push ──asks──▶ credential helper ──▶ token ──▶ GitHub
 - **`workflow`** is needed to push changes to `.github/workflows/*.yml` (S7).
 - **Least privilege:** one repo, expiry 30–90 days, not "never".
 
-## 4. Problems we hit
+## 4. What Claude can access (sandbox)
+
+| | Claude can… |
+| --- | --- |
+| Read | Most files on the machine, incl. `/mnt/c` etc. **Blocked:** `~/.ssh`, `~/.aws`, every `.env*` file, parts of `~/.claude` |
+| Write | Only this project folder + a temp folder |
+| Network | Through a filtering proxy |
+| Your terminal / screen | No. Only output you paste |
+| Permissions / sandbox settings | Never changes them. Yours to decide (`/sandbox`) |
+
+Agreed: Claude only reads what the task needs and doesn't edit project files unless asked.
+
+**Why edits on this project sometimes say `ENOENT` but still work:** the repo is on `/mnt/…` (a Windows drive mounted into WSL). The file is written, but the follow-up check through the Windows/Linux layer briefly fails. Optional fix: move the repo into the Linux filesystem (`~/code/…`): faster npm and tests, case-sensitive like CI.
+
+## 5. Problems we hit
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
