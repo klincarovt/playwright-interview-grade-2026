@@ -1,0 +1,163 @@
+STUDY PROMPTS - copy one into any AI chat (Claude, ChatGPT...) to study
+=========================================================================
+
+How to use:
+  1. Paste PART A (the context) first, every time.
+  2. Then paste ONE prompt from PART B.
+  3. If the answer is too long, say: "shorter, one idea at a time".
+  4. Paste a file from the project when a prompt says <PASTE FILE>.
+
+
+-------------------------------------------------------------------------
+PART A - CONTEXT (paste this first)
+-------------------------------------------------------------------------
+
+I'm preparing for a QA automation interview (Playwright + TypeScript).
+I come from Java (Selenium-style frameworks, 2 years of API testing).
+TypeScript, Node and Playwright fixtures are new to me.
+
+I built a Playwright + TypeScript framework for automationexercise.com:
+- config/environments/dev.json (base URLs) + config/routes.json (paths),
+  loaded and validated with zod in src/config/environments.ts; dotenv reads
+  .env (ENV=dev + secrets); src/config/paths.ts builds file paths with path.join
+- src/ui/pages/LoginPage.ts + src/ui/components/HeaderComponent.ts
+  (page objects, readonly locators, composition, no BasePage)
+- src/api/clients/ProductClient.ts + UserClient.ts (one client per resource,
+  return the response, never assert), src/api/models/*.schema.ts (zod)
+- src/fixtures/ui.fixtures.ts (ad blocking via context.route, loginPage, header),
+  api.fixtures.ts (worker-scoped APIRequestContext, clients, a per-test `user`
+  fixture that creates an account via API and deletes it after the test),
+  index.ts (mergeTests -> `test`, plus `apiTest` without a browser)
+- Auth: a setup project logs in once and saves storageState; project
+  `chromium` = guest, `chromium-user` = logged in; a teardown project deletes the account
+- CI: GitHub Actions runs `npm run check` (eslint + tsc) then the tests
+
+How I want to be taught:
+- Plain words, short. One concept at a time, then stop and check I got it.
+- Always give the Java equivalent when there is one.
+- Show a tiny example (3-6 lines), then explain HOW it works, not just what to type.
+- Don't use syntax you haven't explained yet.
+- Teach first, then ask me ONE question. Never quiz me before explaining.
+- If I'm wrong, tell me what was right in my answer first, then correct it.
+- Correct my terminology if I use the wrong word.
+
+
+-------------------------------------------------------------------------
+PART B - PROMPTS (pick one)
+-------------------------------------------------------------------------
+
+[B1] TypeScript basics drill (for a Java developer)
+Teach me these TypeScript/JavaScript concepts one at a time, each with a
+Java comparison and a tiny example, then one question before moving on:
+  1. const / let, arrow functions  (x) => ...
+  2. template literals  `${name}.json`
+  3. import / export, `import type`, `import { a as b }`, `export { x } from`,
+     `import * as x`, default vs named imports
+  4. objects, spread { ...obj, y: 1 }, destructuring const { ENV } = obj
+  5. optional params  term?: string,  Partial<User>
+  6. type vs interface, generics  base.extend<{ loginPage: LoginPage }>
+  7. any vs unknown, why types are erased at runtime
+  8. Record<K, V>, never, why `{}` is not "empty object"
+  9. classes: constructor, readonly, `constructor(private readonly page: Page)`
+ 10. async / await / Promise<void>  (vs CompletableFuture), floating promises
+ 11. arrays: filter / map  (vs Java streams)
+ 12. regex literals  /a|b/
+Start with 1.
+
+[B2] Things I said I didn't understand - explain each from zero
+I got stuck on these while building. Explain them one by one, simply,
+with a Java comparison, and check my understanding after each:
+  - "what is Record<never, never>?"
+  - "why are we returning Promise<void>?" / what await really does
+  - "what does hardcoded mean?"
+  - "zod is not clear to me" + "aren't we in JavaScript, we have objects natively?"
+  - "the API fixture is confusing" - worker scope vs test scope
+  - "is APIRequestContext an active connection?" and why dispose() it
+  - "why not just use curl?"
+  - "what does index.ts do?" - facade, re-export, mergeTests
+  - "why does a component need a root locator?"
+  - "how many '..' do I need in path.resolve(__dirname, '..', '..')?"
+  - "why use path.join instead of a template string?"
+  - "where do we get the env from?" - .env vs config/environments/dev.json
+  - "dotenv: who wins, CI's ENV or .env?"
+  - "is the config loader overly complicated?" - what each part is for
+  - "do we need a model if we only receive data?"
+  - "what is storageState and how do setup / teardown projects work?"
+
+[B3] Explain my file line by line
+Here is a file from my framework. Explain it top to bottom in plain words:
+what each block does, why it's there, and what would break without it.
+Then ask me to explain it back in 3 sentences and grade my answer.
+<PASTE FILE>
+(Do this for: src/config/environments.ts, src/fixtures/ui.fixtures.ts,
+ src/fixtures/api.fixtures.ts, src/fixtures/index.ts, playwright.config.ts)
+
+[B4] Quiz me (after studying)
+Quiz me on Playwright + TypeScript, one question at a time, mixed difficulty.
+Topics: fixtures (test vs worker scope, use(), teardown), locators (role,
+text, test id, strict mode, scoping), web-first assertions, page objects vs
+BasePage, API testing (APIRequestContext, assert the body), zod and unknown,
+storageState auth, projects + dependencies, parallel-safe test data, CI.
+After each answer: grade it, say what was right, what was missing.
+
+[B5] Mock interview
+Act as a senior QA interviewer. Ask me about my framework (context above),
+one question at a time, and follow up like a real interviewer ("why?",
+"what's the trade-off?", "how would this scale to 10 teams?").
+Include: fixtures vs hooks vs BasePage, where assertions go, auth for many
+tests and roles, parallel safety, API test structure, environments and
+secrets, a flaky test only in CI, retries, which parts are overkill and why.
+At the end, give me a short scorecard and what to practise.
+
+[B6] Debug with me (when something fails)
+I got this error in my Playwright + TS framework. Don't just give me the fix:
+first explain what the error message means, then how to find the cause,
+then the fix. Keep it short.
+<PASTE ERROR + THE FILE>
+
+[B7] Review my code like a PR
+Review this file like a senior reviewer: correctness first, then naming,
+then Playwright best practices (locator order, web-first assertions, no
+assertions in page objects/clients, no hardcoded URLs or paths).
+List findings by severity. Don't rewrite the file, tell me what to change.
+<PASTE FILE>
+
+
+-------------------------------------------------------------------------
+PART C - QUICK REVISION NOTES (read without an AI)
+-------------------------------------------------------------------------
+
+Where the longer notes are (docs/me/):
+  Review Before Interview.md   START HERE: shaky topics, traps, one-liners, reading list
+  TypeScript Basics.md         every TS/Node concept used, mapped to Java
+  Environment Config.txt       the whole config system end to end
+  Fixtures.md                  fixtures, scopes, facade, mergeTests, auth
+  API Layer.md                 baseURL + path, HTTP 200 on errors, clients, form/data/params
+  Framework Initiation.md      setup, tsconfig, ESLint, npm scripts, paths, dotenv, loader
+  Site Notes.md                what we found on the site
+
+Core ideas in one line each:
+  - Outside data (files, env vars, API responses) is `unknown` until zod checks it.
+  - TS types disappear at runtime; zod is the runtime check.
+  - Fixture = setup -> await use(value) -> teardown. Tests ask for it by name.
+  - Worker scope = shared per process, only for things with no test state.
+  - Page object: readonly locators + user intents, no assertions.
+  - Component: a root locator, search only inside it. Pages HAVE components.
+  - Client: knows how to call, returns the response, never asserts.
+  - This site: HTTP 200 on errors -> assert body.responseCode.
+  - baseURL = host only; a path starting with / replaces everything after the host.
+  - Route key typos are NOT caught by tsc (z.record) -> undefined at runtime.
+  - Auth: setup project -> storageState file -> logged-in project; teardown cleans up.
+  - await every Playwright call; await only works inside async.
+  - Every test is made to fail once on purpose.
+  - CI runs lint + typecheck because Playwright never type-checks.
+
+Official docs to read (in order):
+  https://playwright.dev/docs/test-fixtures
+  https://playwright.dev/docs/auth
+  https://playwright.dev/docs/locators
+  https://playwright.dev/docs/api-testing
+  https://playwright.dev/docs/test-projects
+  https://playwright.dev/docs/best-practices
+  https://zod.dev
+  https://www.typescriptlang.org/docs/handbook/2/everyday-types.html

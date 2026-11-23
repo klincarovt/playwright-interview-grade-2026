@@ -178,6 +178,8 @@ Say these out loud until they're automatic.
 | --- | --- |
 | [Framework Initiation](docs/me/Framework%20Initiation.md) | **The project:** setup order, `.gitignore`, the config design (env files, routes, naming rules, vs. Java), template config vs. ours, tsconfig + ESLint line by line, npm scripts |
 | [Environment Config](docs/me/Environment%20Config.txt) | **The config system end to end:** which file answers what, the loader flow, secrets, adding an environment, vs. Java |
+| [**Review Before Interview**](docs/me/Review%20Before%20Interview.md) | **Start here:** what was shaky, the traps you hit, one-liners, what to read, questions to answer out loud |
+| [Study Prompt](docs/me/Study%20Prompt.txt) | **Study with any AI:** a context block + ready prompts (TS drill, "explain what I got stuck on", explain my file, quiz, mock interview, debug, PR review) + quick revision notes |
 | [API Layer](docs/me/API%20Layer.md) | **The API layer:** `baseURL` + path, HTTP 200 on errors, curl, clients, `form` / `data` / `params` |
 | [Fixtures](docs/me/Fixtures.md) | **Fixtures:** what they are, our files, `index.ts` as the facade, ad blocking, `mergeTests` |
 | [Tooling](docs/me/Tooling.md) | **The machine:** inventory (everything installed + exact commands), MCP servers + plugin, git login + tokens, what Claude can access, every problem we hit |

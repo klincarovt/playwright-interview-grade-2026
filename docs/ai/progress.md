@@ -4,6 +4,8 @@ JoJo's notes (commands, takeaways) live in `README.md` → "My notes". Deep dive
 
 ## Resume point
 **▶ RESUME HERE (2026-11-23). Starter kit done: S1–S7 ✅ (S6 done after all: setup/teardown projects, roles as projects `chromium` / `chromium-user`, `header` fixture, `homePath`, ESLint override for `tests/setup/**`). `npm test` = 7 green on 5 workers. S8 = skeleton only (DRAFT, optional). Commit pending: "Add auth setup with saved session".** Last commit `7f0a6ef` "Run lint and typecheck in CI" (pushed). Uncommitted: README skeleton + docs (JoJo commits: "Add README skeleton").
+- **Session closed 2026-11-23 (late, JoJo exhausted).** Final commit by JoJo: "Add auth setup with saved session" (S6 + study notes). Study material: `docs/me/Review Before Interview.md` + `docs/me/Study Prompt.txt` (AI prompts B1–B7; B2 = everything JoJo got stuck on). Next session: ask what JoJo wants (study / README write-up / mock task); don't start building unasked.
+- **Study guide for JoJo:** `docs/me/Review Before Interview.md` (🔴 shaky: config loader, zod/`unknown`, fixtures + scopes, API fixture, async/await · 🟡 traps table · 🟢 one-liners · reading list · questions). Point JoJo there first next session.
 - **Next session options (JoJo decides):** (a) review own code with `docs/me/` (recommended before the interview: `environments.ts`, fixtures, API fixture), (b) write up the README skeleton, (c) S6 auth, (d) mock task on SauceDemo (own repo).
 - Leftovers: `screenshot: 'only-on-failure'` not in config; `.env.example` still modified (Claude can't read it); stricter routes schema idea; fail-check of the happy path (`'someone-else'`) suggested, not confirmed.
 - **JoJo's retro (2026-11-23): "too much time on configurations; most things would have been covered".** Agreed partly: S2 took ~half the time for the least test value (Claude's long explanations + rewrites added to it). It did teach the TS basics that made S3–S7 fast. For the test task: copy the starter kit config, spend the time on tests. Don't over-invest in config in future steps.
@@ -146,6 +148,7 @@ JoJo is learning (Java background). Teach ⬜ before the step that needs it; re-
 | Fixtures (`test.extend`, `use()`, override `context`, generics, `index.ts` facade) | 🟡 | Built ad blocking + `loginPage`; pasted the S5 `mergeTests` preview into `index.ts` by mistake (Claude's preview was unclear) |
 | API client / fixture / worker scope / `mergeTests` | 🟡 | Built it; found the fixture confusing → explained with UI comparison table |
 | zod response schemas, `z.array`, `z.infer`, `Record<never, never>` | 🟡 | Questioned the need, accepted after reasons |
+| Auth: setup/teardown projects, `storageState`, roles as projects | 🟡 | Built in S6 with full snippets; roles-as-projects was JoJo's own idea |
 | Web-first assertions, make-it-fail | ✅ | `toBeVisible()`; broke the locator text to prove the fail |
 
 ## Weak spots
