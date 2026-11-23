@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 import { ENV, env } from './src/config/environments';
+import { USER_STATE } from './src/config/paths';
+
 
 /** Environment Logic is Moved to antother place. Never Uncomment.
  * Read environment variables from file.
@@ -39,15 +41,48 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
+    //Authentication + Session Storage (S6)
+    {
+      name: 'setup',
+      testMatch: /auth\.setup\.ts/,
+      teardown: 'teardown',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: env.automationexercise.web.baseURL
+      },
+    },
+    {
+      name: 'teardown',
+      testMatch: /auth\.teardown\.ts/,
+    },
+
+    {
+      name: 'chromium-user',
+      testDir: './tests/user',
+      dependencies: ['setup'],
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: env.automationexercise.web.baseURL,
+        storageState: USER_STATE,
+      },
+    },
+
+    // Regular Scenarios
     {
       name: 'api',
       testDir: './tests/api',
-      use: { baseURL: env.automationexercise.api.baseURL },
+      testIgnore: ['**/ui/**', '**/setup/**', '**/user/**'],
+      use: {
+        baseURL: env.automationexercise.api.baseURL
+      },
     },
     {
       name: 'chromium',
-      testIgnore: '**/api/**',
-      use: { ...devices['Desktop Chrome'], baseURL: env.automationexercise.web.baseURL },
+      testIgnore: ['**/api/**', '**/setup/**', '**/user/**'],
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: env.automationexercise.web.baseURL
+      },
     },
 
     // Disabling for now.

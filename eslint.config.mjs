@@ -18,4 +18,11 @@ export default defineConfig(
     ...playwright.configs['flat/recommended'],
     files: ['tests/**'],
   },
+  {
+    files: ['tests/setup/**'],
+    rules: {
+      'playwright/expect-expect': 'off',
+      'playwright/no-conditional-in-test': 'off',
+    },
+  },
 );

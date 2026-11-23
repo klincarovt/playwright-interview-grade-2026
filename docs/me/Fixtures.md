@@ -37,5 +37,22 @@ export const apiTest = ...;                        // API specs: API fixtures on
 ```
 Java: like one test class getting beans from two `@Configuration` classes.
 
+## Auth: setup project + saved session (S6)
+```
+setup project (once):       create account via API → write ACCOUNT_FILE → log in via UI → storageState → USER_STATE
+chromium-user (per test):   starts from USER_STATE = already logged in, no login step
+teardown project (once):    read ACCOUNT_FILE → delete the account
+```
+| Config | Meaning |
+| --- | --- |
+| `dependencies: ['setup']` | run `setup` first |
+| `teardown: 'teardown'` (on setup) | run `teardown` after everything that depended on setup |
+| `storageState: USER_STATE` | each test starts with these cookies |
+| `testDir` / `testIgnore` | which folder a project runs: `tests/ui` = guest, `tests/user` = logged in |
+
+**Roles are projects:** guest (`chromium`) and user (`chromium-user`). Login tests stay in the guest project, so no opt-out is needed. A new role (admin) = a new project + its own state file.
+
+The account file is written **before** the login, so teardown can delete the account even if the login fails.
+
 ## Types: `base.extend<{ loginPage: LoginPage }>`
 The `<…>` (generics, like Java) tells TypeScript which fixtures exist and their types, so `async ({ loginPage })` compiles.

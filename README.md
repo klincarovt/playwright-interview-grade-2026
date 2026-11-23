@@ -1,6 +1,66 @@
 # Playwright + TS framework
 
-UI + API test framework for [automationexercise.com](https://automationexercise.com). Work in progress: the full README (how to run, structure, design decisions) comes in step S8.
+UI + API test framework for [automationexercise.com](https://automationexercise.com), built the way I'd build it for a large system (many environments, many services).
+
+> ⚠️ **DRAFT skeleton (S8, optional):** facts as bullet points. Might be written up into full sentences later, might stay like this.
+
+## What it covers
+- **UI:** login with wrong credentials shows the error · login with a valid user shows "Logged in as" (hybrid: account created + deleted via API) · a logged-in user starts from a saved session (no login step)
+- **API:** products list returns products (full zod contract check) · POST to products list is rejected (`responseCode` 405)
+
+## How to run
+- `npm ci` → `npx playwright install --with-deps chromium`
+- Optional: `cp .env.example .env`. Without it, `ENV` defaults to `dev`
+- `npm test` (all) · `npm run test:api` (no browser) · `npm run test:e2e` (Chromium) · `npm run test:smoke` · `npm run check` (lint + typecheck) · `npm run report`
+- Another environment: `ENV=pre npm test` once `config/environments/pre.json` exists. No code change
+
+## Structure
+```
+config/                    JSON only: environments/<env>.json (URLs) + routes.json (paths), validated by zod at startup
+src/config/                loader (environments.ts: the only place dotenv is loaded) + paths.ts (the only place file paths are built)
+src/ui/pages, components   page objects + components (composition, no BasePage)
+src/api/clients, models    one client per resource + zod response schemas
+src/data/builders, types   buildUser() with unique data + request types
+src/fixtures/              ui + api fixtures; index.ts = the one import for tests (mergeTests)
+tests/ui, tests/api        specs
+```
+Layer rule: tests → fixtures → pages / clients / builders → config. Never upwards.
+
+## Design decisions (each: what it buys at scale · what a small project could skip)
+- **Config per environment as JSON + zod** · a typo stops the run at startup with the exact field; a new env = a new file · small project: a typed TS object
+- **Paths in one `routes.json`** · URLs change per env, paths don't, so no copies · small project: paths in the page objects
+- **Valid `ENV` = the files that exist, default `dev`, never `prod`** · small project: a hardcoded list
+- **No BasePage, components instead** · shared parts are components a page *has*; inheritance only at the Rule of Three
+- **One client per resource, one request context per service (worker-scoped)** · a second API host = one more context · small project: Playwright's built-in `request`
+- **Responses validated with zod, requests typed** · validate what we receive (untrusted), the compiler checks what we send
+- **Test data via API in a fixture, deleted in teardown** · parallel-safe, cleaned up even when the test fails
+- **`apiTest` for API specs** · no browser starts
+- **Auth via a setup project + `storageState`; roles are projects** · `chromium` = guest, `chromium-user` = logged in from `playwright/.auth/user.json`; teardown deletes the account. A new role = a new project · small project: log in inside each test
+- **Two tag axes** · suite (`@smoke`, `@regression`) × area (`@auth`, `@products`, `@api`)
+- **CI runs lint + typecheck before tests** · Playwright doesn't type-check
+
+## Issues found on the site
+- API returns **HTTP 200 even on errors**; the real code is in the body (`responseCode` 405 / 400) → tests assert the body. I'd raise it as a contract defect
+- `price` is text with a currency (`"Rs. 500"`), not a number
+- Login error message has no `data-qa` (located by text)
+- Two "Email Address" fields on the login page (login + signup) → `data-qa` needed
+- Ads + consent popup → blocked in a fixture
+- Google Fonts over `http://` → mixed-content console errors
+
+## Assumptions
+- One public environment (`dev` = the live site)
+- Tests create their own throwaway accounts; no real credentials
+
+## What I'd add with more time
+- Per-worker accounts (one shared session is fine while logged-in tests don't change server state)
+- Stricter routes schema so a wrong route key fails at compile time (hit this twice)
+- More API cases (search product, verify login), more pages, Contact Us (upload + dialog)
+- CI: smoke on PRs, full nightly matrix, sharding; Prettier + pre-commit hook; ADRs; environment health check
+
+## AI usage
+- Claude Code as tutor and reviewer: concepts explained first, PR-style reviews, docs kept up to date
+- I wrote most of the code; Claude wrote parts on request (config loader restructure, comments, some full snippets when time was short)
+- Caught by review: route-key typos (`api.createAccount`), `baseURL` + `/api` path loss, unscoped locators, missing `await`
 
 ---
 
@@ -100,6 +160,18 @@ Say these out loud until they're automatic.
 - Client = how to call (no asserts) · fixture = builds it once per worker · test = calls + asserts.
 - Responses are untrusted: `Schema.parse(await response.json())` checks the whole contract and gives a type (`z.infer`).
 - `apiTest` = API fixtures only → no browser starts. `test` = `mergeTests(uiTest, apiTest)` → UI tests can use API clients too.
+
+#### S4 (part 2) + S7
+- Test data via API in a fixture: create → `use()` → delete. Cleanup runs even when the test fails.
+- Types for what we send (`User`), zod for what we receive. Name things by what they are (`MessageResponseSchema`, not "Error").
+- Route keys aren't checked by `tsc` (`z.record`): `api.createAccount` vs `createAccountPath` → `undefined` at runtime.
+- CI must run `npm run check`: Playwright runs TS without type-checking. Install only the browsers you use.
+
+#### S6
+- Log in once in a `setup` project, save the session (`storageState` → `user.json`), reuse it. A `teardown` project deletes the account.
+- Roles are projects: `chromium` (guest) and `chromium-user` (logged in), each with its own test folder.
+- A project can't depend on itself. `dependencies` = "run that first", `teardown` = "run this last".
+- Lint rules can be switched off per folder (a later `{ files, rules }` block overrides an earlier one).
 
 ### Deep dives
 | File | Covers |

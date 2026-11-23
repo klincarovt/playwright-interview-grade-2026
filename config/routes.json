@@ -2,7 +2,8 @@
     "automationexercise": {
         "web": {
             "loginPath": "/login",
-            "productsPath": "/products"
+            "productsPath": "/products",
+            "homePath": "/"
         },
         "api": {
             "productsListPath": "/api/productsList",

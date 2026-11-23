@@ -3,6 +3,12 @@
 JoJo's notes (commands, takeaways) live in `README.md` → "My notes". Deep dives live in `docs/me/`.
 
 ## Resume point
+**▶ RESUME HERE (2026-11-23). Starter kit done: S1–S7 ✅ (S6 done after all: setup/teardown projects, roles as projects `chromium` / `chromium-user`, `header` fixture, `homePath`, ESLint override for `tests/setup/**`). `npm test` = 7 green on 5 workers. S8 = skeleton only (DRAFT, optional). Commit pending: "Add auth setup with saved session".** Last commit `7f0a6ef` "Run lint and typecheck in CI" (pushed). Uncommitted: README skeleton + docs (JoJo commits: "Add README skeleton").
+- **Next session options (JoJo decides):** (a) review own code with `docs/me/` (recommended before the interview: `environments.ts`, fixtures, API fixture), (b) write up the README skeleton, (c) S6 auth, (d) mock task on SauceDemo (own repo).
+- Leftovers: `screenshot: 'only-on-failure'` not in config; `.env.example` still modified (Claude can't read it); stricter routes schema idea; fail-check of the happy path (`'someone-else'`) suggested, not confirmed.
+- **JoJo's retro (2026-11-23): "too much time on configurations; most things would have been covered".** Agreed partly: S2 took ~half the time for the least test value (Claude's long explanations + rewrites added to it). It did teach the TS basics that made S3–S7 fast. For the test task: copy the starter kit config, spend the time on tests. Don't over-invest in config in future steps.
+- JoJo said "I never planned rehearsal" → don't push explain-back; offer it once, as an option.
+
 **S4 ✅ (2026-11-23).** `UserClient` (create/delete, `form`), `src/types/user.ts`, `buildUser({ ...overrides })`, `MessageResponseSchema` in `common.schema.ts` (renamed from ErrorResponse), `user` per-test fixture (create → guard 201 → use → delete). Hybrid happy path green (2 workers). Route-key typo trap hit twice (`api.createAccount`) → stricter routes schema = "what I'd add". Quick mode on (JoJo exhausted): full snippets, no curl. **S7 ✅ (2026-11-23):** CI = installer workflow + `npm run check` step + `install --with-deps chromium` (JoJo pasted the "→" text twice, fixed). CI already caught the `price: z.number()` push. **Next: README (S8). S6 cut.**
 
 **▶ RESUME HERE (2026-11-22, JoJo on a break): S5 ✅ pushed (`8961bcd`). Next = `UserClient`, step 0: JoJo runs the 2 curl commands (createAccount POST with all form fields → expect 201; deleteAccount DELETE email+password → expect 200) and pastes the output. Then: routes (`createAccountPath`, `deleteAccountPath`, maybe `verifyLoginPath`) → `UserClient` → user builder (`crypto.randomUUID()`) → `userClient` fixture → S4 happy path (API creates user → UI login → `header.loggedInAs` contains name → delete via API). Then S6 → S7 → S8.**
@@ -105,6 +111,10 @@ Repo is **private** (JoJo, 2026-11-22) → `docs/ai/progress.md` can stay tracke
 | S3 ✅ | 2026-11-22 | Ad-blocking fixture (`context` override). Committed with S4 part 1 |
 | S4 part 1 | 2026-11-22 | `loginPage` fixture, `index.ts`, first spec (negative login) green + failed on purpose. JoJo commits "Add page fixtures and first login test" |
 | S5 core | 2026-11-22 | API client + schema + fixture + 2 API specs green. JoJo commits "Add products API client, schema and tests" |
+| S4 ✅ | 2026-11-23 | `aff38b1` UserClient + user fixture + hybrid login test |
+| S7 ✅ | 2026-11-23 | `7f0a6ef` CI: `npm run check` step + Chromium only |
+| S6 ✅ | 2026-11-23 | Auth: setup → `storageState` → `chromium-user` → teardown. Mistakes: `setup` depending on itself, project running `tests/ui` logged in, missing `homePath` (third `undefined` route trap) |
+| S8 🟡 | 2026-11-23 | README skeleton (bullets, DRAFT) written by Claude on request; S6 cut |
 | S1 Tooling | 2026-11-22 | All MCP servers connected + `typescript-lsp` plugin verified. Site check via MCP: `/products` server-rendered, ad domains noted. Deep dives reorganised into 3 files: `Framework Initiation.md` (project), `Tooling.md` (machine), `Site Notes.md` (site) |
 
 ## Concept tracker

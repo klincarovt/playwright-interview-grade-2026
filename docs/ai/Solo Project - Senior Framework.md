@@ -513,9 +513,9 @@ Define it in 1–2 sentences, give one example from this framework, name one tra
 | S3 | 1 page object (paths from `routes`) + 1 component · ad-blocking fixture | ✅ (`LoginPage`, `HeaderComponent`, `src/fixtures/ui.fixtures.ts` overrides `context`) |
 | S4 | UI fixtures + first UI spec (critical journey, tags `@smoke` + area) + 1 negative UI case | ✅ (negative login + hybrid happy path: `user` fixture creates the account via API → UI login → `loggedInAs` → API deletes it) |
 | S5 | **Verify the API codes (§5) first**, then API paths in `routes.json` + API context per service (`baseURL: env.<app>.api.baseURL`) + 1 client + zod response schema + API fixture + `mergeTests` (`test` / `apiTest`); 1 positive + 1 negative API spec | ✅ (`ProductClient`, `products.schema.ts`, `api.fixtures.ts`, `mergeTests`; GET list + POST 405) |
-| S6 | Auth: setup project creates the account via API + saves `storageState`; teardown deletes it; login spec opts out (§7) | ⬜ |
+| S6 | Auth: setup project creates the account via API + saves `storageState`; teardown deletes it; login spec opts out (§7) | ✅ (2026-11-23, JoJo chose to do it after all) `setup` + `teardown` projects, `USER_STATE` + `ACCOUNT_FILE`; **roles as projects** (JoJo's idea): `chromium` = guest (`tests/ui/`), `chromium-user` = logged in (`tests/user/`), so no opt-out needed |
 | S7 | Minimal CI on `pull_request` + `push` to `main`: `npm ci` → lint → typecheck → smoke on `api` + `chromium` with `ENV=dev` → HTML report artifact | ✅ (installer workflow + `npm run check` step + Chromium only; runs the full suite, `ENV` defaults to `dev`) |
-| S8 | README from the §0 template + the "built to scale" decisions + "one environment, how to add one" | ⬜ |
+| S8 | README from the §0 template + the "built to scale" decisions + "one environment, how to add one" | 🟡 (skeleton with bullet facts, marked DRAFT/optional; JoJo may write it up later) |
 
 **If time runs out:** cut S6 (explain it in "what I'd add") → S7 (template CI) → S8 (template README). **Never cut S5.**
 
